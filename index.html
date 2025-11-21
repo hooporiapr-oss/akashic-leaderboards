@@ -312,6 +312,7 @@
             <button class="game-btn" data-game="sequence">🧠 Sequence Game</button>
             <button class="game-btn" data-game="memory">🃏 Memory Match</button>
             <button class="game-btn" data-game="reaction">⚡ Reaction Timer</button>
+            <button class="game-btn" data-game="number">🔢 Number Memory</button>
             <button class="game-btn" data-game="all">⭐ All Games</button>
         </div>
 
@@ -424,6 +425,33 @@
                 </table>
             </div>
 
+            <!-- Number Memory Leaderboard -->
+            <div id="numberLeaderboard" class="leaderboard-section hidden">
+                <div class="leaderboard-header">
+                    <h2 class="leaderboard-title">🔢 Memory Masters</h2>
+                    <div class="sort-selector">
+                        <button class="sort-btn active" data-sort="longest">Longest Sequence</button>
+                        <button class="sort-btn" data-sort="accuracy">Best Accuracy</button>
+                        <button class="sort-btn" data-sort="attempts">Most Attempts</button>
+                    </div>
+                </div>
+
+                <div class="stats-summary" id="numberSummary"></div>
+
+                <table class="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Player</th>
+                            <th>Longest Sequence</th>
+                            <th>Accuracy</th>
+                            <th>Rating</th>
+                        </tr>
+                    </thead>
+                    <tbody id="numberTableBody"></tbody>
+                </table>
+            </div>
+
             <!-- All Games Summary -->
             <div id="allGamesLeaderboard" class="leaderboard-section hidden">
                 <div class="leaderboard-header">
@@ -442,6 +470,7 @@
                             <th>Sequence Level</th>
                             <th>Match Wins</th>
                             <th>Reaction Time</th>
+                            <th>Number Digits</th>
                         </tr>
                     </thead>
                     <tbody id="allGamesTableBody"></tbody>
@@ -460,6 +489,7 @@
         const SEQUENCE_USERS = 'seq_users';
         const MEMORY_USERS = 'match_users';
         const REACTION_USERS = 'reaction_users';
+        const NUMBER_USERS = 'number_users';
 
         function getGameUsers(storageKey) {
             return JSON.parse(localStorage.getItem(storageKey) || '[]');
@@ -494,6 +524,16 @@
             if (avgTime < 350) return '👍 Good';
             if (avgTime < 400) return '👌 Fair';
             return '🐌 Slow';
+        }
+
+        function getNumberRating(longest) {
+            if (longest === 0) return '--';
+            if (longest >= 12) return '🧠 Genius';
+            if (longest >= 10) return '⭐ Master';
+            if (longest >= 8) return '🔥 Expert';
+            if (longest >= 7) return '💪 Strong';
+            if (longest >= 5) return '👍 Good';
+            return '📚 Learning';
         }
 
         // ==================== REFLEX LEADERBOARD ====================
@@ -791,12 +831,95 @@
             `;
         }
 
+        // ==================== NUMBER MEMORY LEADERBOARD ====================
+        function loadNumberLeaderboard(sortBy = 'longest') {
+            const users = getGameUsers(NUMBER_USERS);
+            const tbody = document.getElementById('numberTableBody');
+
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="no-data">No players yet. Be the first!</td></tr>';
+                return;
+            }
+
+            let sorted = [...users];
+            
+            if (sortBy === 'longest') {
+                sorted.sort((a, b) => (b.stats.longestSequence || 0) - (a.stats.longestSequence || 0));
+            } else if (sortBy === 'accuracy') {
+                sorted.sort((a, b) => {
+                    const accA = a.stats.totalAttempts > 0 
+                        ? (a.stats.correctAnswers / a.stats.totalAttempts) * 100
+                        : 0;
+                    const accB = b.stats.totalAttempts > 0 
+                        ? (b.stats.correctAnswers / b.stats.totalAttempts) * 100
+                        : 0;
+                    return accB - accA;
+                });
+            } else if (sortBy === 'attempts') {
+                sorted.sort((a, b) => (b.stats.totalAttempts || 0) - (a.stats.totalAttempts || 0));
+            }
+
+            tbody.innerHTML = sorted.map((user, index) => {
+                const accuracy = user.stats.totalAttempts > 0
+                    ? Math.round((user.stats.correctAnswers / user.stats.totalAttempts) * 100)
+                    : 0;
+                
+                return `
+                    <tr>
+                        <td class="rank ${getRankClass(index + 1)}">
+                            <span class="trophy">${getRankIcon(index + 1)}</span>
+                        </td>
+                        <td class="username">${user.username}</td>
+                        <td>
+                            <span class="stat-value">${user.stats.longestSequence || 0}</span>
+                            <span class="stat-label">digits</span>
+                        </td>
+                        <td>
+                            <span class="stat-value">${accuracy}%</span>
+                            <span class="stat-label">accuracy</span>
+                        </td>
+                        <td>
+                            <span class="stat-value">${getNumberRating(user.stats.longestSequence)}</span>
+                            <span class="stat-label">rating</span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            const totalAttempts = users.reduce((sum, u) => sum + (u.stats.totalAttempts || 0), 0);
+            const longestOverall = Math.max(...users.map(u => u.stats.longestSequence || 0));
+            const totalCorrect = users.reduce((sum, u) => sum + (u.stats.correctAnswers || 0), 0);
+            const globalAccuracy = totalAttempts > 0 
+                ? Math.round((totalCorrect / totalAttempts) * 100)
+                : 0;
+
+            document.getElementById('numberSummary').innerHTML = `
+                <div class="summary-box">
+                    <div class="summary-value">${users.length}</div>
+                    <div class="summary-label">Total Players</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-value">${totalAttempts}</div>
+                    <div class="summary-label">Total Attempts</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-value">${longestOverall}</div>
+                    <div class="summary-label">Longest Sequence</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-value">${globalAccuracy}%</div>
+                    <div class="summary-label">Global Accuracy</div>
+                </div>
+            `;
+        }
+
         // ==================== ALL GAMES SUMMARY ====================
         function loadAllGamesLeaderboard() {
             const reflexUsers = getGameUsers(REFLEX_USERS);
             const sequenceUsers = getGameUsers(SEQUENCE_USERS);
             const memoryUsers = getGameUsers(MEMORY_USERS);
             const reactionUsers = getGameUsers(REACTION_USERS);
+            const numberUsers = getGameUsers(NUMBER_USERS);
 
             // Merge all users by username
             const allPlayers = new Map();
@@ -811,7 +934,9 @@
                     memoryGames: 0,
                     memoryWins: 0,
                     reactionAttempts: 0,
-                    reactionFastest: null
+                    reactionFastest: null,
+                    numberAttempts: 0,
+                    numberLongest: 0
                 });
             });
 
@@ -830,7 +955,9 @@
                         memoryGames: 0,
                         memoryWins: 0,
                         reactionAttempts: 0,
-                        reactionFastest: null
+                        reactionFastest: null,
+                        numberAttempts: 0,
+                        numberLongest: 0
                     });
                 }
             });
@@ -850,7 +977,9 @@
                         memoryGames: u.stats.gamesPlayed || 0,
                         memoryWins: u.stats.gamesWon || 0,
                         reactionAttempts: 0,
-                        reactionFastest: null
+                        reactionFastest: null,
+                        numberAttempts: 0,
+                        numberLongest: 0
                     });
                 }
             });
@@ -870,7 +999,31 @@
                         memoryGames: 0,
                         memoryWins: 0,
                         reactionAttempts: u.stats.totalAttempts || 0,
-                        reactionFastest: u.stats.fastestTime
+                        reactionFastest: u.stats.fastestTime,
+                        numberAttempts: 0,
+                        numberLongest: 0
+                    });
+                }
+            });
+
+            numberUsers.forEach(u => {
+                const key = u.username.toLowerCase();
+                if (allPlayers.has(key)) {
+                    allPlayers.get(key).numberAttempts = u.stats.totalAttempts || 0;
+                    allPlayers.get(key).numberLongest = u.stats.longestSequence || 0;
+                } else {
+                    allPlayers.set(key, {
+                        username: u.username,
+                        reflexGames: 0,
+                        reflexScore: 0,
+                        sequenceGames: 0,
+                        sequenceLevel: 0,
+                        memoryGames: 0,
+                        memoryWins: 0,
+                        reactionAttempts: 0,
+                        reactionFastest: null,
+                        numberAttempts: u.stats.totalAttempts || 0,
+                        numberLongest: u.stats.longestSequence || 0
                     });
                 }
             });
@@ -879,20 +1032,20 @@
             
             // Sort by total games played
             players.sort((a, b) => {
-                const totalA = a.reflexGames + a.sequenceGames + a.memoryGames + a.reactionAttempts;
-                const totalB = b.reflexGames + b.sequenceGames + b.memoryGames + b.reactionAttempts;
+                const totalA = a.reflexGames + a.sequenceGames + a.memoryGames + a.reactionAttempts + a.numberAttempts;
+                const totalB = b.reflexGames + b.sequenceGames + b.memoryGames + b.reactionAttempts + b.numberAttempts;
                 return totalB - totalA;
             });
 
             const tbody = document.getElementById('allGamesTableBody');
 
             if (players.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="no-data">No players yet. Be the first!</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="no-data">No players yet. Be the first!</td></tr>';
                 return;
             }
 
             tbody.innerHTML = players.map((player, index) => {
-                const totalGames = player.reflexGames + player.sequenceGames + player.memoryGames + player.reactionAttempts;
+                const totalGames = player.reflexGames + player.sequenceGames + player.memoryGames + player.reactionAttempts + player.numberAttempts;
                 
                 return `
                     <tr>
@@ -920,12 +1073,16 @@
                             <span class="stat-value">${player.reactionFastest ? player.reactionFastest + 'ms' : '--'}</span>
                             <span class="stat-label">reaction</span>
                         </td>
+                        <td>
+                            <span class="stat-value">${player.numberLongest}</span>
+                            <span class="stat-label">digits</span>
+                        </td>
                     </tr>
                 `;
             }).join('');
 
             const totalAllGames = players.reduce((sum, p) => 
-                sum + p.reflexGames + p.sequenceGames + p.memoryGames + p.reactionAttempts, 0
+                sum + p.reflexGames + p.sequenceGames + p.memoryGames + p.reactionAttempts + p.numberAttempts, 0
             );
 
             document.getElementById('allGamesSummary').innerHTML = `
@@ -952,6 +1109,10 @@
                 <div class="summary-box">
                     <div class="summary-value">${reactionUsers.length}</div>
                     <div class="summary-label">Reaction Players</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-value">${numberUsers.length}</div>
+                    <div class="summary-label">Number Players</div>
                 </div>
             `;
         }
@@ -981,6 +1142,9 @@
                     } else if (game === 'reaction') {
                         document.getElementById('reactionLeaderboard').classList.remove('hidden');
                         loadReactionLeaderboard();
+                    } else if (game === 'number') {
+                        document.getElementById('numberLeaderboard').classList.remove('hidden');
+                        loadNumberLeaderboard();
                     } else if (game === 'all') {
                         document.getElementById('allGamesLeaderboard').classList.remove('hidden');
                         loadAllGamesLeaderboard();
@@ -1018,6 +1182,14 @@
                     document.querySelectorAll('#reactionLeaderboard .sort-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     loadReactionLeaderboard(btn.dataset.sort);
+                });
+            });
+
+            document.querySelectorAll('#numberLeaderboard .sort-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('#numberLeaderboard .sort-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    loadNumberLeaderboard(btn.dataset.sort);
                 });
             });
 
