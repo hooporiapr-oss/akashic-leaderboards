@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Akashic Leaderboards</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1034 50%, #2d1b4e 100%);
+            min-height: 100vh;
+            color: #e8e8f0;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .title {
+            font-size: 3.5em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #ffd700, #ff8c00, #8a2be2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            letter-spacing: 4px;
+        }
+
+        .subtitle {
+            color: #d4af37;
+            font-size: 1.3em;
+            font-style: italic;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .game-selector {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .game-btn {
+            padding: 15px 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            border-radius: 15px;
+            color: #d4af37;
+            cursor: pointer;
+            font-family: 'Georgia', serif;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .game-btn:hover {
+            border-color: #ffd700;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .game-btn.active {
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            color: #1a1034;
+            border-color: #ffd700;
+            font-weight: bold;
+        }
+
+        .leaderboard-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 3px solid rgba(212, 175, 55, 0.5);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+        }
+
+        .leaderboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .leaderboard-title {
+            font-size: 2em;
+            color: #ffd700;
+        }
+
+        .sort-selector {
+            display: flex;
+            gap: 10px;
+        }
+
+        .sort-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            border-radius: 10px;
+            color: #d4af37;
+            cursor: pointer;
+            font-family: 'Georgia', serif;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .sort-btn:hover {
+            border-color: #ffd700;
+        }
+
+        .sort-btn.active {
+            background: linear-gradient(135deg, #8a2be2, #4b0082);
+            color: #fff;
+            border-color: #8a2be2;
+        }
+
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 10px;
+        }
+
+        .leaderboard-table thead th {
+            color: #d4af37;
+            text-align: left;
+            padding: 15px;
+            font-size: 1.1em;
+            border-bottom: 2px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .leaderboard-table tbody tr {
+            background: rgba(255, 255, 255, 0.03);
+            transition: all 0.3s ease;
+        }
+
+        .leaderboard-table tbody tr:hover {
+            background: rgba(255, 215, 0, 0.1);
+            transform: scale(1.02);
+        }
+
+        .leaderboard-table tbody td {
+            padding: 20px 15px;
+            border-top: 1px solid rgba(212, 175, 55, 0.1);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+        }
+
+        .leaderboard-table tbody tr td:first-child {
+            border-left: 1px solid rgba(212, 175, 55, 0.1);
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+        }
+
+        .leaderboard-table tbody tr td:last-child {
+            border-right: 1px solid rgba(212, 175, 55, 0.1);
+            border-top-right-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+
+        .rank {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #ffd700;
+            width: 60px;
+            text-align: center;
+        }
+
+        .rank-1 {
+            color: #ffd700;
+            text-shadow: 0 0 10px #ffd700;
+        }
+
+        .rank-2 {
+            color: #c0c0c0;
+            text-shadow: 0 0 10px #c0c0c0;
+        }
+
+        .rank-3 {
+            color: #cd7f32;
+            text-shadow: 0 0 10px #cd7f32;
+        }
+
+        .trophy {
+            font-size: 1.5em;
+            margin-right: 5px;
+        }
+
+        .username {
+            font-size: 1.2em;
+            color: #e8e8f0;
+            font-weight: bold;
+        }
+
+        .stat-value {
+            font-size: 1.1em;
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #b8b8cc;
+            display: block;
+            margin-top: 3px;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: #b8b8cc;
+            font-size: 1.2em;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .back-link a {
+            color: #ffd700;
+            text-decoration: none;
+            font-size: 1.1em;
+            padding: 10px 20px;
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            border-radius: 10px;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .back-link a:hover {
+            border-color: #ffd700;
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .stats-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .summary-box {
+            background: rgba(255, 215, 0, 0.1);
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .summary-value {
+            font-size: 2em;
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .summary-label {
+            color: #b8b8cc;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2em;
+            }
+
+            .leaderboard-table {
+                font-size: 0.85em;
+            }
+
+            .leaderboard-table tbody td {
+                padding: 12px 8px;
+            }
+
+            .rank {
+                width: 40px;
+            }
+
+            .game-selector {
+                flex-direction: column;
+            }
+
+            .game-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">🏆 Akashic Leaderboards</div>
+            <div class="subtitle">Hall of Champions</div>
+        </div>
+
+        <div class="game-selector">
+            <button class="game-btn active" data-game="reflex">🎯 Reflex Game</button>
+            <button class="game-btn" data-game="sequence">🧠 Sequence Game</button>
+            <button class="game-btn" data-game="memory">🃏 Memory Match</button>
+            <button class="game-btn" data-game="all">⭐ All Games</button>
+        </div>
+
+        <div class="leaderboard-container">
+            <!-- Reflex Leaderboard -->
+            <div id="reflexLeaderboard" class="leaderboard-section">
+                <div class="leaderboard-header">
+                    <h2 class="leaderboard-title">🎯 Reflex Champions</h2>
+                    <div class="sort-selector">
+                        <button class="sort-btn active" data-sort="score">High Score</button>
+                        <button class="sort-btn" data-sort="accuracy">Best Accuracy</button>
+                        <button class="sort-btn" data-sort="games">Most Games</button>
+                    </div>
+                </div>
+
+                <div class="stats-summary" id="reflexSummary"></div>
+
+                <table class="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Player</th>
+                            <th>High Score</th>
+                            <th>Best Accuracy</th>
+                            <th>Games Played</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reflexTableBody"></tbody>
+                </table>
+            </div>
+
+            <!-- Sequence Leaderboard -->
+            <div id="sequenceLeaderboard" class="leaderboard-section hidden">
+                <div class="leaderboard-header">
+                    <h2 class="leaderboard-title">🧠 Memory Masters</h2>
+                    <div class="sort-selector">
+                        <button class="sort-btn active" data-sort="score">High Score</button>
+                        <button class="sort-btn" data-sort="level">Highest Level</button>
+                        <button class="sort-btn" data-sort="games">Most Games</button>
+                    </div>
+                </div>
+
+                <div class="stats-summary" id="sequenceSummary"></div>
+
+                <table class="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Player</th>
+                            <th>High Score</th>
+                            <th>Highest Level</th>
+                            <th>Avg Score</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sequenceTableBody"></tbody>
+                </table>
+            </div>
+
+            <!-- Memory Match Leaderboard -->
+            <div id="memoryLeaderboard" class="leaderboard-section hidden">
+                <div class="leaderboard-header">
+                    <h2 class="leaderboard-title">🃏 Card Match Legends</h2>
+                    <div class="sort-selector">
+                        <button class="sort-btn active" data-sort="moves">Fewest Moves</button>
+                        <button class="sort-btn" data-sort="time">Fastest Time</button>
+                        <button class="sort-btn" data-sort="games">Most Games</button>
+                    </div>
+                </div>
+
+                <div class="stats-summary" id="memorySummary"></div>
+
+                <table class="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Player</th>
+                            <th>Best Moves</th>
+                            <th>Best Time</th>
+                            <th>Win Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody id="memoryTableBody"></tbody>
+                </table>
+            </div>
+
+            <!-- All Games Summary -->
+            <div id="allGamesLeaderboard" class="leaderboard-section hidden">
+                <div class="leaderboard-header">
+                    <h2 class="leaderboard-title">⭐ Ultimate Champions</h2>
+                </div>
+
+                <div class="stats-summary" id="allGamesSummary"></div>
+
+                <table class="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Player</th>
+                            <th>Total Games</th>
+                            <th>Reflex Score</th>
+                            <th>Sequence Level</th>
+                            <th>Match Wins</th>
+                        </tr>
+                    </thead>
+                    <tbody id="allGamesTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="back-link">
+            <a href="#" onclick="goBack()">← Back to Games</a>
+        </div>
+    </div>
+
+    <script>
+        // Storage keys for different games
+        const REFLEX_USERS = 'akashic_users';
+        const SEQUENCE_USERS = 'seq_users';
+        const MEMORY_USERS = 'match_users';
+
+        function getGameUsers(storageKey) {
+            return JSON.parse(localStorage.getItem(storageKey) || '[]');
+        }
+
+        function formatTime(seconds) {
+            if (!seconds) return '--';
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function getRankIcon(rank) {
+            if (rank === 1) return '🥇';
+            if (rank === 2) return '🥈';
+            if (rank === 3) return '🥉';
+            return rank;
+        }
+
+        function getRankClass(rank) {
+            if (rank === 1) return 'rank-1';
+            if (rank === 2) return 'rank-2';
+            if (rank === 3) return 'rank-3';
+            return '';
+        }
+
+        // ==================== REFLEX LEADERBOARD ====================
+        function loadReflexLeaderboard(sortBy = 'score') {
+            const users = getGameUsers(REFLEX_USERS);
+            const tbody = document.getElementById('reflexTableBody');
+
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="no-data">No players yet. Be the first!</td></tr>';
+                return;
+            }
+
+            // Sort users
+            let sorted = [...users];
+            if (sortBy === 'score') {
+                sorted.sort((a, b) => (b.stats.highScore || 0) - (a.stats.highScore || 0));
+            } else if (sortBy === 'accuracy') {
+                sorted.sort((a, b) => (b.stats.bestAccuracy || 0) - (a.stats.bestAccuracy || 0));
+            } else if (sortBy === 'games') {
+                sorted.sort((a, b) => (b.stats.gamesPlayed || 0) - (a.stats.gamesPlayed || 0));
+            }
+
+            // Generate rows
+            tbody.innerHTML = sorted.map((user, index) => `
+                <tr>
+                    <td class="rank ${getRankClass(index + 1)}">
+                        <span class="trophy">${getRankIcon(index + 1)}</span>
+                    </td>
+                    <td class="username">${user.username}</td>
+                    <td>
+                        <span class="stat-value">${user.stats.highScore || 0}</span>
+                        <span class="stat-label">points</span>
+                    </td>
+                    <td>
+                        <span class="stat-value">${user.stats.bestAccuracy || 0}%</span>
+                        <span class="stat-label">accuracy</span>
+                    </td>
+                    <td>
+                        <span class="stat-value">${user.stats.gamesPlayed || 0}</span>
+                        <span class="stat-label">games</span>
+                    </td>
+                </tr>
+            `).join('');
+
+            // Summary stats
+            const totalGames = users.reduce((sum, u) => sum + (u.stats.gamesPlayed || 0), 0);
+            const highestScore = Math.max(...users.map(u => u.stats.highScore || 0));
+            const avgAccuracy = users.length > 0 
+                ? Math.round(users.reduce((sum, u) => sum + (u.stats.bestAccuracy || 0), 0) / users.length)
+                : 0;
+
+            document.getElementById('reflexSummary').innerHTML = `
+                <div class="summary-box">
+                    <div class="summary-value">${users.length}</div>
+                    <div class="summary-label">Total Players</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-value">${totalGames}</div>
+                    <div class="summary-label">Games Played</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-value">${highestScore}</div>
+                    <div class="summary-label">Highest Score</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-value">${avgAccuracy}%</div>
+                    <div class="summary-label">Avg Accuracy</div>
+                </div>
+            `;
+        }
+
+        // ==================== SEQUENCE LEADERBOARD ====================
+        function loadSequenceLeaderboard(sortBy = 'score') {
+            const users = getGameUsers(SEQUENCE_USERS);
+            const tbody = document.getElementById('sequenceTableBody');
+
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="no-data">No players yet. Be the first!</td></tr>';
+                return;
+            }
+
+            let sorted = [...users];
+            if (sortBy === 'score') {
+                sorted.sort((a, b) => (b.stats.highScore || 0) - (a.stats.highScore || 0));
+            } else if (sortBy === 'level') {
+                sorted.sort((a, b) => (b.stats.highestLevel || 0) - (a.stats.highestLevel || 0));
+            } else if (sortBy === 'games') {
+                sorted.sort((a, b) => (b.stats.gamesPlayed || 0) - (a.stats.gamesPlayed || 0));
+            }
+
+            tbody.innerHTML = sorted.map((user, index) => {
+                const avgScore = user.stats.gamesPlayed > 0 
+                    ? Math.round(user.stats.totalScore / user.stats.gamesPlayed)
+                    : 0;
+                
+                return `
+                    <tr>
+                        <td class="rank ${getRankClass(index + 1)}">
+                            <span class="trophy">${getRankIcon(index + 1)}</span>
+                        </td>
+                        <td class="username">${user.username}</td>
+                        <td>
+                            <span class="stat-value">${user.stats.highScore || 0}</span>
+                            <span class="stat-label">points</span>
+                        </td>
+                        <td>
+                            <span class="stat-value">${user.stats.highestLevel || 0}</span>
+                            <span class="stat-label">level</span>
+                        </td>
+                        <td>
+                            <span class="stat-value">${avgScore}</span>
+                            <span class="stat-label">avg</span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            const totalGames = users.reduce((sum, u) => sum + (u.stats.gamesPlayed || 0), 0);
+            const highestLevel = Math.max(...users.map(u => u.stats.highestLevel || 0));
+            const highestScore = Math.max(...users.map(u => u.stats.highScore || 0));
+
+            document.getElementById('sequenceSummary').innerHTML = `
+                <div class="summary-box">
+                    <div class="summary-value">${users.length}</div>
+                    <div class="summary-label">Total Players</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-value">${totalGames}</div>
+                    <div class="summary-label">Games Played</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-value">${highestLevel}</div>
+                    <div class="summary-label">Highest Level</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-value">${highestScore}</div>
+                    <div class="summary-label">Best Score</div>
+                </div>
+            `;
+        }
+
+        // ==================== MEMORY MATCH LEADERBOARD ====================
+        function loadMemoryLeaderboard(sortBy = 'moves') {
+            const users = getGameUsers(MEMORY_USERS);
+            const tbody = document.getElementById('memoryTableBody');
+
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="no-data">No players yet. Be the first!</td></tr>';
+                return;
+            }
+
+            let sorted = [...users].filter(u => u.stats.bestMoves !== null);
+            
+            if (sortBy === 'moves') {
+                sorted.sort((a, b) => (a.stats.bestMoves || Infinity) - (b.stats.bestMoves || Infinity));
+            } else if (sortBy === 'time') {
+                sorted.sort((a, b) => (a.stats.bestTime || Infinity) - (b.stats.bestTime || Infinity));
+            } else if (sortBy === 'games') {
+                sorted.sort((a, b) => (b.stats.gamesPlayed || 0) - (a.stats.gamesPlayed || 0));
+            }
+
+            tbody.innerHTML = sorted.map((user, index) => {
+                const winRate = user.stats.gamesPlayed > 0 
+                    ? Math.round((user.stats.gamesWon / user.stats.gamesPlayed) * 100)
+                    : 0;
+                
+                return `
+                    <tr>
+                        <td class="rank ${getRankClass(index + 1)}">
+                            <span class="trophy">${getRankIcon(index + 1)}</span>
+                        </td>
+                        <td class="username">${user.username}</td>
+                        <td>
+                            <span class="stat-value">${user.stats.bestMoves || '--'}</span>
+                            <span class="stat-label">moves</span>
+                        </td>
+                        <td>
+                            <span class="stat-value">${formatTime(user.stats.bestTime)}</span>
+                            <span class="stat-label">time</span>
+                        </td>
+                        <td>
+                            <span class="stat-value">${winRate}%</span>
+                            <span class="stat-label">win rate</span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            const totalGames = users.reduce((sum, u) => sum + (u.stats.gamesPlayed || 0), 0);
+            const bestMoves = Math.min(...users.filter(u => u.stats.bestMoves).map(u => u.stats.bestMoves));
+            const bestTime = Math.min(...users.filter(u => u.stats.bestTime).map(u => u.stats.bestTime));
+
+            document.getElementById('memorySummary').innerHTML = `
+                <div class="summary-box">
+                    <div class="summary-value">${users.length}</div>
+                    <div class="summary-label">Total Players</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-value">${totalGames}</div>
+                    <div class="summary-label">Games Played</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-value">${bestMoves !== Infinity ? bestMoves : '--'}</div>
+                    <div class="summary-label">Best Moves</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-value">${bestTime !== Infinity ? formatTime(bestTime) : '--'}</div>
+                    <div class="summary-label">Best Time</div>
+                </div>
+            `;
+        }
+
+        // ==================== ALL GAMES SUMMARY ====================
+        function loadAllGamesLeaderboard() {
+            const reflexUsers = getGameUsers(REFLEX_USERS);
+            const sequenceUsers = getGameUsers(SEQUENCE_USERS);
+            const memoryUsers = getGameUsers(MEMORY_USERS);
+
+            // Merge all users by username
+            const allPlayers = new Map();
+
+            reflexUsers.forEach(u => {
+                allPlayers.set(u.username.toLowerCase(), {
+                    username: u.username,
+                    reflexGames: u.stats.gamesPlayed || 0,
+                    reflexScore: u.stats.highScore || 0,
+                    sequenceGames: 0,
+                    sequenceLevel: 0,
+                    memoryGames: 0,
+                    memoryWins: 0
+                });
+            });
+
+            sequenceUsers.forEach(u => {
+                const key = u.username.toLowerCase();
+                if (allPlayers.has(key)) {
+                    allPlayers.get(key).sequenceGames = u.stats.gamesPlayed || 0;
+                    allPlayers.get(key).sequenceLevel = u.stats.highestLevel || 0;
+                } else {
+                    allPlayers.set(key, {
+                        username: u.username,
+                        reflexGames: 0,
+                        reflexScore: 0,
+                        sequenceGames: u.stats.gamesPlayed || 0,
+                        sequenceLevel: u.stats.highestLevel || 0,
+                        memoryGames: 0,
+                        memoryWins: 0
+                    });
+                }
+            });
+
+            memoryUsers.forEach(u => {
+                const key = u.username.toLowerCase();
+                if (allPlayers.has(key)) {
+                    allPlayers.get(key).memoryGames = u.stats.gamesPlayed || 0;
+                    allPlayers.get(key).memoryWins = u.stats.gamesWon || 0;
+                } else {
+                    allPlayers.set(key, {
+                        username: u.username,
+                        reflexGames: 0,
+                        reflexScore: 0,
+                        sequenceGames: 0,
+                        sequenceLevel: 0,
+                        memoryGames: u.stats.gamesPlayed || 0,
+                        memoryWins: u.stats.gamesWon || 0
+                    });
+                }
+            });
+
+            const players = Array.from(allPlayers.values());
+            
+            // Sort by total games played
+            players.sort((a, b) => {
+                const totalA = a.reflexGames + a.sequenceGames + a.memoryGames;
+                const totalB = b.reflexGames + b.sequenceGames + b.memoryGames;
+                return totalB - totalA;
+            });
+
+            const tbody = document.getElementById('allGamesTableBody');
+
+            if (players.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="no-data">No players yet. Be the first!</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = players.map((player, index) => {
+                const totalGames = player.reflexGames + player.sequenceGames + player.memoryGames;
+                
+                return `
+                    <tr>
+                        <td class="rank ${getRankClass(index + 1)}">
+                            <span class="trophy">${getRankIcon(index + 1)}</span>
+                        </td>
+                        <td class="username">${player.username}</td>
+                        <td>
+                            <span class="stat-value">${totalGames}</span>
+                            <span class="stat-label">total games</span>
+                        </td>
+                        <td>
+                            <span class="stat-value">${player.reflexScore}</span>
+                            <span class="stat-label">reflex</span>
+                        </td>
+                        <td>
+                            <span class="stat-value">${player.sequenceLevel}</span>
+                            <span class="stat-label">sequence</span>
+                        </td>
+                        <td>
+                            <span class="stat-value">${player.memoryWins}</span>
+                            <span class="stat-label">matches</span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            const totalAllGames = players.reduce((sum, p) => 
+                sum + p.reflexGames + p.sequenceGames + p.memoryGames, 0
+            );
+
+            document.getElementById('allGamesSummary').innerHTML = `
+                <div class="summary-box">
+                    <div class="summary-value">${players.length}</div>
+                    <div class="summary-label">Total Players</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-value">${totalAllGames}</div>
+                    <div class="summary-label">All Games Played</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-value">${reflexUsers.length}</div>
+                    <div class="summary-label">Reflex Players</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-value">${sequenceUsers.length}</div>
+                    <div class="summary-label">Sequence Players</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-value">${memoryUsers.length}</div>
+                    <div class="summary-label">Memory Players</div>
+                </div>
+            `;
+        }
+
+        // ==================== EVENT LISTENERS ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            // Game selector
+            document.querySelectorAll('.game-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.game-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    document.querySelectorAll('.leaderboard-section').forEach(section => {
+                        section.classList.add('hidden');
+                    });
+
+                    const game = btn.dataset.game;
+                    if (game === 'reflex') {
+                        document.getElementById('reflexLeaderboard').classList.remove('hidden');
+                        loadReflexLeaderboard();
+                    } else if (game === 'sequence') {
+                        document.getElementById('sequenceLeaderboard').classList.remove('hidden');
+                        loadSequenceLeaderboard();
+                    } else if (game === 'memory') {
+                        document.getElementById('memoryLeaderboard').classList.remove('hidden');
+                        loadMemoryLeaderboard();
+                    } else if (game === 'all') {
+                        document.getElementById('allGamesLeaderboard').classList.remove('hidden');
+                        loadAllGamesLeaderboard();
+                    }
+                });
+            });
+
+            // Sort buttons for each game
+            document.querySelectorAll('#reflexLeaderboard .sort-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('#reflexLeaderboard .sort-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    loadReflexLeaderboard(btn.dataset.sort);
+                });
+            });
+
+            document.querySelectorAll('#sequenceLeaderboard .sort-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('#sequenceLeaderboard .sort-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    loadSequenceLeaderboard(btn.dataset.sort);
+                });
+            });
+
+            document.querySelectorAll('#memoryLeaderboard .sort-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('#memoryLeaderboard .sort-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    loadMemoryLeaderboard(btn.dataset.sort);
+                });
+            });
+
+            // Load initial leaderboard
+            loadReflexLeaderboard();
+        });
+
+        function goBack() {
+            // You can customize this to go back to your main games page
+            window.history.back();
+        }
+    </script>
+</body>
+</html>
