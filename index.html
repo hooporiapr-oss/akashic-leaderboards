@@ -311,6 +311,7 @@
             <button class="game-btn active" data-game="reflex">🎯 Reflex Game</button>
             <button class="game-btn" data-game="sequence">🧠 Sequence Game</button>
             <button class="game-btn" data-game="memory">🃏 Memory Match</button>
+            <button class="game-btn" data-game="reaction">⚡ Reaction Timer</button>
             <button class="game-btn" data-game="all">⭐ All Games</button>
         </div>
 
@@ -396,6 +397,33 @@
                 </table>
             </div>
 
+            <!-- Reaction Timer Leaderboard -->
+            <div id="reactionLeaderboard" class="leaderboard-section hidden">
+                <div class="leaderboard-header">
+                    <h2 class="leaderboard-title">⚡ Lightning Reflexes</h2>
+                    <div class="sort-selector">
+                        <button class="sort-btn active" data-sort="fastest">Fastest Time</button>
+                        <button class="sort-btn" data-sort="average">Best Average</button>
+                        <button class="sort-btn" data-sort="attempts">Most Attempts</button>
+                    </div>
+                </div>
+
+                <div class="stats-summary" id="reactionSummary"></div>
+
+                <table class="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Player</th>
+                            <th>Fastest Time</th>
+                            <th>Average Time</th>
+                            <th>Rating</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reactionTableBody"></tbody>
+                </table>
+            </div>
+
             <!-- All Games Summary -->
             <div id="allGamesLeaderboard" class="leaderboard-section hidden">
                 <div class="leaderboard-header">
@@ -413,6 +441,7 @@
                             <th>Reflex Score</th>
                             <th>Sequence Level</th>
                             <th>Match Wins</th>
+                            <th>Reaction Time</th>
                         </tr>
                     </thead>
                     <tbody id="allGamesTableBody"></tbody>
@@ -430,6 +459,7 @@
         const REFLEX_USERS = 'akashic_users';
         const SEQUENCE_USERS = 'seq_users';
         const MEMORY_USERS = 'match_users';
+        const REACTION_USERS = 'reaction_users';
 
         function getGameUsers(storageKey) {
             return JSON.parse(localStorage.getItem(storageKey) || '[]');
@@ -454,6 +484,16 @@
             if (rank === 2) return 'rank-2';
             if (rank === 3) return 'rank-3';
             return '';
+        }
+
+        function getReactionRating(avgTime) {
+            if (!avgTime) return '--';
+            if (avgTime < 200) return '⚡ Lightning';
+            if (avgTime < 250) return '🔥 Blazing';
+            if (avgTime < 300) return '⭐ Excellent';
+            if (avgTime < 350) return '👍 Good';
+            if (avgTime < 400) return '👌 Fair';
+            return '🐌 Slow';
         }
 
         // ==================== REFLEX LEADERBOARD ====================
@@ -666,11 +706,97 @@
             `;
         }
 
+        // ==================== REACTION TIMER LEADERBOARD ====================
+        function loadReactionLeaderboard(sortBy = 'fastest') {
+            const users = getGameUsers(REACTION_USERS);
+            const tbody = document.getElementById('reactionTableBody');
+
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="no-data">No players yet. Be the first!</td></tr>';
+                return;
+            }
+
+            let sorted = [...users].filter(u => u.stats.fastestTime !== null);
+            
+            if (sortBy === 'fastest') {
+                sorted.sort((a, b) => (a.stats.fastestTime || Infinity) - (b.stats.fastestTime || Infinity));
+            } else if (sortBy === 'average') {
+                sorted.sort((a, b) => {
+                    const avgA = a.stats.allTimes.length > 0 
+                        ? a.stats.allTimes.reduce((sum, t) => sum + t, 0) / a.stats.allTimes.length 
+                        : Infinity;
+                    const avgB = b.stats.allTimes.length > 0 
+                        ? b.stats.allTimes.reduce((sum, t) => sum + t, 0) / b.stats.allTimes.length 
+                        : Infinity;
+                    return avgA - avgB;
+                });
+            } else if (sortBy === 'attempts') {
+                sorted.sort((a, b) => (b.stats.totalAttempts || 0) - (a.stats.totalAttempts || 0));
+            }
+
+            tbody.innerHTML = sorted.map((user, index) => {
+                const avgTime = user.stats.allTimes.length > 0
+                    ? Math.round(user.stats.allTimes.reduce((sum, t) => sum + t, 0) / user.stats.allTimes.length)
+                    : null;
+                
+                return `
+                    <tr>
+                        <td class="rank ${getRankClass(index + 1)}">
+                            <span class="trophy">${getRankIcon(index + 1)}</span>
+                        </td>
+                        <td class="username">${user.username}</td>
+                        <td>
+                            <span class="stat-value">${user.stats.fastestTime}ms</span>
+                            <span class="stat-label">fastest</span>
+                        </td>
+                        <td>
+                            <span class="stat-value">${avgTime ? avgTime + 'ms' : '--'}</span>
+                            <span class="stat-label">average</span>
+                        </td>
+                        <td>
+                            <span class="stat-value">${getReactionRating(avgTime)}</span>
+                            <span class="stat-label">rating</span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            const totalAttempts = users.reduce((sum, u) => sum + (u.stats.totalAttempts || 0), 0);
+            const fastestOverall = Math.min(...users.filter(u => u.stats.fastestTime).map(u => u.stats.fastestTime));
+            
+            const allAvgTimes = users
+                .filter(u => u.stats.allTimes.length > 0)
+                .map(u => u.stats.allTimes.reduce((sum, t) => sum + t, 0) / u.stats.allTimes.length);
+            const avgOfAvgs = allAvgTimes.length > 0 
+                ? Math.round(allAvgTimes.reduce((sum, t) => sum + t, 0) / allAvgTimes.length)
+                : null;
+
+            document.getElementById('reactionSummary').innerHTML = `
+                <div class="summary-box">
+                    <div class="summary-value">${users.length}</div>
+                    <div class="summary-label">Total Players</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-value">${totalAttempts}</div>
+                    <div class="summary-label">Total Attempts</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-value">${fastestOverall !== Infinity ? fastestOverall + 'ms' : '--'}</div>
+                    <div class="summary-label">Fastest Ever</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-value">${avgOfAvgs ? avgOfAvgs + 'ms' : '--'}</div>
+                    <div class="summary-label">Global Average</div>
+                </div>
+            `;
+        }
+
         // ==================== ALL GAMES SUMMARY ====================
         function loadAllGamesLeaderboard() {
             const reflexUsers = getGameUsers(REFLEX_USERS);
             const sequenceUsers = getGameUsers(SEQUENCE_USERS);
             const memoryUsers = getGameUsers(MEMORY_USERS);
+            const reactionUsers = getGameUsers(REACTION_USERS);
 
             // Merge all users by username
             const allPlayers = new Map();
@@ -683,7 +809,9 @@
                     sequenceGames: 0,
                     sequenceLevel: 0,
                     memoryGames: 0,
-                    memoryWins: 0
+                    memoryWins: 0,
+                    reactionAttempts: 0,
+                    reactionFastest: null
                 });
             });
 
@@ -700,7 +828,9 @@
                         sequenceGames: u.stats.gamesPlayed || 0,
                         sequenceLevel: u.stats.highestLevel || 0,
                         memoryGames: 0,
-                        memoryWins: 0
+                        memoryWins: 0,
+                        reactionAttempts: 0,
+                        reactionFastest: null
                     });
                 }
             });
@@ -718,7 +848,29 @@
                         sequenceGames: 0,
                         sequenceLevel: 0,
                         memoryGames: u.stats.gamesPlayed || 0,
-                        memoryWins: u.stats.gamesWon || 0
+                        memoryWins: u.stats.gamesWon || 0,
+                        reactionAttempts: 0,
+                        reactionFastest: null
+                    });
+                }
+            });
+
+            reactionUsers.forEach(u => {
+                const key = u.username.toLowerCase();
+                if (allPlayers.has(key)) {
+                    allPlayers.get(key).reactionAttempts = u.stats.totalAttempts || 0;
+                    allPlayers.get(key).reactionFastest = u.stats.fastestTime;
+                } else {
+                    allPlayers.set(key, {
+                        username: u.username,
+                        reflexGames: 0,
+                        reflexScore: 0,
+                        sequenceGames: 0,
+                        sequenceLevel: 0,
+                        memoryGames: 0,
+                        memoryWins: 0,
+                        reactionAttempts: u.stats.totalAttempts || 0,
+                        reactionFastest: u.stats.fastestTime
                     });
                 }
             });
@@ -727,20 +879,20 @@
             
             // Sort by total games played
             players.sort((a, b) => {
-                const totalA = a.reflexGames + a.sequenceGames + a.memoryGames;
-                const totalB = b.reflexGames + b.sequenceGames + b.memoryGames;
+                const totalA = a.reflexGames + a.sequenceGames + a.memoryGames + a.reactionAttempts;
+                const totalB = b.reflexGames + b.sequenceGames + b.memoryGames + b.reactionAttempts;
                 return totalB - totalA;
             });
 
             const tbody = document.getElementById('allGamesTableBody');
 
             if (players.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="no-data">No players yet. Be the first!</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="no-data">No players yet. Be the first!</td></tr>';
                 return;
             }
 
             tbody.innerHTML = players.map((player, index) => {
-                const totalGames = player.reflexGames + player.sequenceGames + player.memoryGames;
+                const totalGames = player.reflexGames + player.sequenceGames + player.memoryGames + player.reactionAttempts;
                 
                 return `
                     <tr>
@@ -750,7 +902,7 @@
                         <td class="username">${player.username}</td>
                         <td>
                             <span class="stat-value">${totalGames}</span>
-                            <span class="stat-label">total games</span>
+                            <span class="stat-label">total</span>
                         </td>
                         <td>
                             <span class="stat-value">${player.reflexScore}</span>
@@ -764,12 +916,16 @@
                             <span class="stat-value">${player.memoryWins}</span>
                             <span class="stat-label">matches</span>
                         </td>
+                        <td>
+                            <span class="stat-value">${player.reactionFastest ? player.reactionFastest + 'ms' : '--'}</span>
+                            <span class="stat-label">reaction</span>
+                        </td>
                     </tr>
                 `;
             }).join('');
 
             const totalAllGames = players.reduce((sum, p) => 
-                sum + p.reflexGames + p.sequenceGames + p.memoryGames, 0
+                sum + p.reflexGames + p.sequenceGames + p.memoryGames + p.reactionAttempts, 0
             );
 
             document.getElementById('allGamesSummary').innerHTML = `
@@ -792,6 +948,10 @@
                 <div class="summary-box">
                     <div class="summary-value">${memoryUsers.length}</div>
                     <div class="summary-label">Memory Players</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-value">${reactionUsers.length}</div>
+                    <div class="summary-label">Reaction Players</div>
                 </div>
             `;
         }
@@ -818,6 +978,9 @@
                     } else if (game === 'memory') {
                         document.getElementById('memoryLeaderboard').classList.remove('hidden');
                         loadMemoryLeaderboard();
+                    } else if (game === 'reaction') {
+                        document.getElementById('reactionLeaderboard').classList.remove('hidden');
+                        loadReactionLeaderboard();
                     } else if (game === 'all') {
                         document.getElementById('allGamesLeaderboard').classList.remove('hidden');
                         loadAllGamesLeaderboard();
@@ -847,6 +1010,14 @@
                     document.querySelectorAll('#memoryLeaderboard .sort-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     loadMemoryLeaderboard(btn.dataset.sort);
+                });
+            });
+
+            document.querySelectorAll('#reactionLeaderboard .sort-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('#reactionLeaderboard .sort-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    loadReactionLeaderboard(btn.dataset.sort);
                 });
             });
 
