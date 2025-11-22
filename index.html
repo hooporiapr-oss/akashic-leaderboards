@@ -1,1206 +1,1032 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Akashic Leaderboards</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hall of Champions - Akashic Works</title>
+<style>
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+}
 
-        body {
-            font-family: 'Georgia', serif;
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1034 50%, #2d1b4e 100%);
-            min-height: 100vh;
-            color: #e8e8f0;
-            padding: 20px;
-        }
+body {
+font-family: 'Georgia', serif;
+background: linear-gradient(135deg, #0a0e27 0%, #1a1034 50%, #2d1b4e 100%);
+min-height: 100vh;
+color: #e8e8f0;
+overflow-x: hidden;
+}
 
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
+/* Animated background stars */
+.stars {
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+pointer-events: none;
+z-index: 0;
+}
 
-        .title {
-            font-size: 3.5em;
-            font-weight: bold;
-            background: linear-gradient(135deg, #ffd700, #ff8c00, #8a2be2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
-            letter-spacing: 4px;
-        }
+.star {
+position: absolute;
+width: 2px;
+height: 2px;
+background: #ffd700;
+border-radius: 50%;
+animation: twinkle 3s infinite;
+}
 
-        .subtitle {
-            color: #d4af37;
-            font-size: 1.3em;
-            font-style: italic;
-        }
+@keyframes twinkle {
+0%, 100% { opacity: 0.3; }
+50% { opacity: 1; }
+}
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+.content {
+position: relative;
+z-index: 1;
+padding: 30px 20px;
+max-width: 1400px;
+margin: 0 auto;
+}
 
-        .game-selector {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-bottom: 40px;
-            flex-wrap: wrap;
-        }
+/* Header */
+.header {
+text-align: center;
+margin-bottom: 60px;
+animation: fadeInDown 1s ease;
+}
 
-        .game-btn {
-            padding: 15px 30px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px solid rgba(212, 175, 55, 0.3);
-            border-radius: 15px;
-            color: #d4af37;
-            cursor: pointer;
-            font-family: 'Georgia', serif;
-            font-size: 1.1em;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
+@keyframes fadeInDown {
+from {
+opacity: 0;
+transform: translateY(-30px);
+}
+to {
+opacity: 1;
+transform: translateY(0);
+}
+}
 
-        .game-btn:hover {
-            border-color: #ffd700;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.3);
-        }
+.back-link {
+display: inline-block;
+color: #d4af37;
+text-decoration: none;
+font-size: 1.1em;
+margin-bottom: 30px;
+transition: all 0.3s ease;
+}
 
-        .game-btn.active {
-            background: linear-gradient(135deg, #ffd700, #ff8c00);
-            color: #1a1034;
-            border-color: #ffd700;
-            font-weight: bold;
-        }
+.back-link:hover {
+color: #ffd700;
+transform: translateX(-5px);
+}
 
-        .leaderboard-container {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
-            border: 3px solid rgba(212, 175, 55, 0.5);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
-        }
+.trophy-icon {
+font-size: 6em;
+margin-bottom: 20px;
+filter: drop-shadow(0 5px 20px rgba(255, 215, 0, 0.6));
+animation: float 3s ease-in-out infinite;
+}
 
-        .leaderboard-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
+@keyframes float {
+0%, 100% { transform: translateY(0px); }
+50% { transform: translateY(-15px); }
+}
 
-        .leaderboard-title {
-            font-size: 2em;
-            color: #ffd700;
-        }
+.main-title {
+font-size: 4em;
+font-weight: bold;
+background: linear-gradient(135deg, #ffd700, #ff8c00, #8a2be2, #ffd700);
+background-size: 200% 200%;
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+background-clip: text;
+margin-bottom: 20px;
+letter-spacing: 6px;
+animation: gradientShift 5s ease infinite;
+}
 
-        .sort-selector {
-            display: flex;
-            gap: 10px;
-        }
+@keyframes gradientShift {
+0%, 100% { background-position: 0% 50%; }
+50% { background-position: 100% 50%; }
+}
 
-        .sort-btn {
-            padding: 8px 16px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px solid rgba(212, 175, 55, 0.3);
-            border-radius: 10px;
-            color: #d4af37;
-            cursor: pointer;
-            font-family: 'Georgia', serif;
-            font-size: 0.9em;
-            transition: all 0.3s ease;
-        }
+.subtitle {
+font-size: 1.5em;
+color: #d4af37;
+font-style: italic;
+margin-bottom: 30px;
+}
 
-        .sort-btn:hover {
-            border-color: #ffd700;
-        }
+.company-badge {
+display: inline-block;
+background: rgba(138, 43, 226, 0.2);
+border: 2px solid rgba(138, 43, 226, 0.4);
+color: #8a2be2;
+padding: 8px 20px;
+border-radius: 20px;
+font-size: 0.9em;
+margin-bottom: 20px;
+}
 
-        .sort-btn.active {
-            background: linear-gradient(135deg, #8a2be2, #4b0082);
-            color: #fff;
-            border-color: #8a2be2;
-        }
+/* Navigation Tabs */
+.nav-tabs {
+display: flex;
+justify-content: center;
+gap: 15px;
+margin-bottom: 50px;
+flex-wrap: wrap;
+}
 
-        .leaderboard-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0 10px;
-        }
+.nav-tab {
+background: rgba(255, 255, 255, 0.05);
+border: 2px solid rgba(212, 175, 55, 0.3);
+color: #d4af37;
+padding: 12px 25px;
+border-radius: 25px;
+font-size: 1.1em;
+cursor: pointer;
+transition: all 0.3s ease;
+font-family: 'Georgia', serif;
+}
 
-        .leaderboard-table thead th {
-            color: #d4af37;
-            text-align: left;
-            padding: 15px;
-            font-size: 1.1em;
-            border-bottom: 2px solid rgba(212, 175, 55, 0.3);
-        }
+.nav-tab:hover {
+border-color: #ffd700;
+background: rgba(255, 215, 0, 0.1);
+transform: translateY(-3px);
+}
 
-        .leaderboard-table tbody tr {
-            background: rgba(255, 255, 255, 0.03);
-            transition: all 0.3s ease;
-        }
+.nav-tab.active {
+background: linear-gradient(135deg, #ffd700, #ff8c00);
+color: #1a1034;
+border-color: #ffd700;
+font-weight: bold;
+}
 
-        .leaderboard-table tbody tr:hover {
-            background: rgba(255, 215, 0, 0.1);
-            transform: scale(1.02);
-        }
+/* Leaderboard Container */
+.leaderboard-container {
+display: none;
+}
 
-        .leaderboard-table tbody td {
-            padding: 20px 15px;
-            border-top: 1px solid rgba(212, 175, 55, 0.1);
-            border-bottom: 1px solid rgba(212, 175, 55, 0.1);
-        }
+.leaderboard-container.active {
+display: block;
+animation: fadeIn 0.5s ease;
+}
 
-        .leaderboard-table tbody tr td:first-child {
-            border-left: 1px solid rgba(212, 175, 55, 0.1);
-            border-top-left-radius: 10px;
-            border-bottom-left-radius: 10px;
-        }
+@keyframes fadeIn {
+from { opacity: 0; transform: translateY(20px); }
+to { opacity: 1; transform: translateY(0); }
+}
 
-        .leaderboard-table tbody tr td:last-child {
-            border-right: 1px solid rgba(212, 175, 55, 0.1);
-            border-top-right-radius: 10px;
-            border-bottom-right-radius: 10px;
-        }
+.leaderboard-header {
+text-align: center;
+margin-bottom: 40px;
+}
 
-        .rank {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #ffd700;
-            width: 60px;
-            text-align: center;
-        }
+.leaderboard-icon {
+font-size: 4em;
+margin-bottom: 15px;
+}
 
-        .rank-1 {
-            color: #ffd700;
-            text-shadow: 0 0 10px #ffd700;
-        }
+.leaderboard-title {
+font-size: 2.5em;
+color: #ffd700;
+margin-bottom: 10px;
+font-weight: bold;
+}
 
-        .rank-2 {
-            color: #c0c0c0;
-            text-shadow: 0 0 10px #c0c0c0;
-        }
+.leaderboard-description {
+color: #c4c4d8;
+font-size: 1.1em;
+max-width: 700px;
+margin: 0 auto;
+}
 
-        .rank-3 {
-            color: #cd7f32;
-            text-shadow: 0 0 10px #cd7f32;
-        }
+/* Leaderboard Table */
+.leaderboard-table {
+background: rgba(255, 255, 255, 0.05);
+backdrop-filter: blur(20px);
+border: 3px solid rgba(212, 175, 55, 0.3);
+border-radius: 25px;
+padding: 30px;
+margin-bottom: 40px;
+overflow-x: auto;
+}
 
-        .trophy {
-            font-size: 1.5em;
-            margin-right: 5px;
-        }
+table {
+width: 100%;
+border-collapse: collapse;
+}
 
-        .username {
-            font-size: 1.2em;
-            color: #e8e8f0;
-            font-weight: bold;
-        }
+thead {
+background: rgba(255, 215, 0, 0.1);
+}
 
-        .stat-value {
-            font-size: 1.1em;
-            color: #ffd700;
-            font-weight: bold;
-        }
+th {
+color: #ffd700;
+padding: 18px 15px;
+text-align: left;
+font-size: 1.2em;
+border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+}
 
-        .stat-label {
-            font-size: 0.85em;
-            color: #b8b8cc;
-            display: block;
-            margin-top: 3px;
-        }
+th.rank {
+width: 80px;
+text-align: center;
+}
 
-        .no-data {
-            text-align: center;
-            padding: 60px 20px;
-            color: #b8b8cc;
-            font-size: 1.2em;
-        }
+th.score {
+text-align: right;
+}
 
-        .back-link {
-            text-align: center;
-            margin-top: 30px;
-        }
+tbody tr {
+border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+transition: all 0.3s ease;
+}
 
-        .back-link a {
-            color: #ffd700;
-            text-decoration: none;
-            font-size: 1.1em;
-            padding: 10px 20px;
-            border: 2px solid rgba(212, 175, 55, 0.3);
-            border-radius: 10px;
-            display: inline-block;
-            transition: all 0.3s ease;
-        }
+tbody tr:hover {
+background: rgba(255, 215, 0, 0.05);
+transform: scale(1.01);
+}
 
-        .back-link a:hover {
-            border-color: #ffd700;
-            background: rgba(255, 215, 0, 0.1);
-        }
+td {
+padding: 18px 15px;
+color: #c4c4d8;
+font-size: 1.1em;
+}
 
-        .stats-summary {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
-        }
+td.rank {
+text-align: center;
+font-weight: bold;
+color: #ffd700;
+font-size: 1.3em;
+}
 
-        .summary-box {
-            background: rgba(255, 215, 0, 0.1);
-            border: 2px solid rgba(255, 215, 0, 0.3);
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-        }
+td.score {
+text-align: right;
+font-weight: bold;
+color: #ff8c00;
+}
 
-        .summary-value {
-            font-size: 2em;
-            color: #ffd700;
-            font-weight: bold;
-        }
+/* Top 3 Medals */
+.medal {
+font-size: 1.5em;
+margin-right: 8px;
+}
 
-        .summary-label {
-            color: #b8b8cc;
-            margin-top: 5px;
-        }
+tr:nth-child(1) .rank {
+color: #ffd700;
+}
 
-        @media (max-width: 768px) {
-            .title {
-                font-size: 2em;
-            }
+tr:nth-child(2) .rank {
+color: #c0c0c0;
+}
 
-            .leaderboard-table {
-                font-size: 0.85em;
-            }
+tr:nth-child(3) .rank {
+color: #cd7f32;
+}
 
-            .leaderboard-table tbody td {
-                padding: 12px 8px;
-            }
+/* Combined Leaderboard Special Styling */
+.combined-note {
+background: rgba(138, 43, 226, 0.2);
+border: 2px solid rgba(138, 43, 226, 0.4);
+border-radius: 15px;
+padding: 20px;
+margin-bottom: 30px;
+text-align: center;
+color: #c4c4d8;
+}
 
-            .rank {
-                width: 40px;
-            }
+.combined-note strong {
+color: #8a2be2;
+}
 
-            .game-selector {
-                flex-direction: column;
-            }
+/* Empty State */
+.empty-state {
+text-align: center;
+padding: 60px 20px;
+}
 
-            .game-btn {
-                width: 100%;
-            }
-        }
-    </style>
+.empty-icon {
+font-size: 5em;
+margin-bottom: 20px;
+opacity: 0.5;
+}
+
+.empty-text {
+color: #b8b8cc;
+font-size: 1.3em;
+}
+
+/* Footer */
+.footer {
+text-align: center;
+padding: 50px 20px;
+margin-top: 80px;
+border-top: 2px solid rgba(212, 175, 55, 0.3);
+}
+
+.footer-company {
+font-size: 2em;
+font-weight: bold;
+background: linear-gradient(135deg, #ffd700, #ff8c00, #8a2be2);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+background-clip: text;
+margin-bottom: 15px;
+letter-spacing: 3px;
+}
+
+.footer-tagline {
+color: #d4af37;
+font-size: 1.1em;
+font-style: italic;
+}
+
+/* Responsive - Mobile Portrait */
+@media (max-width: 768px) {
+.content {
+padding: 20px 15px;
+}
+
+.header {
+margin-bottom: 40px;
+}
+
+.back-link {
+font-size: 1em;
+margin-bottom: 20px;
+}
+
+.trophy-icon {
+font-size: 4em;
+margin-bottom: 15px;
+}
+
+.main-title {
+font-size: 2.2em;
+letter-spacing: 3px;
+margin-bottom: 15px;
+}
+
+.subtitle {
+font-size: 1.1em;
+margin-bottom: 20px;
+}
+
+.company-badge {
+font-size: 0.8em;
+padding: 6px 15px;
+}
+
+.nav-tabs {
+gap: 10px;
+margin-bottom: 35px;
+}
+
+.nav-tab {
+padding: 10px 18px;
+font-size: 0.95em;
+}
+
+.leaderboard-header {
+margin-bottom: 30px;
+}
+
+.leaderboard-icon {
+font-size: 3em;
+}
+
+.leaderboard-title {
+font-size: 1.8em;
+margin-bottom: 10px;
+}
+
+.leaderboard-description {
+font-size: 0.95em;
+padding: 0 10px;
+}
+
+.leaderboard-table {
+padding: 20px 15px;
+margin-bottom: 30px;
+border-radius: 20px;
+}
+
+table {
+font-size: 0.9em;
+}
+
+th {
+padding: 12px 8px;
+font-size: 1em;
+}
+
+td {
+padding: 12px 8px;
+font-size: 0.95em;
+}
+
+td.rank {
+font-size: 1.1em;
+}
+
+.medal {
+font-size: 1.2em;
+margin-right: 5px;
+}
+
+.combined-note {
+padding: 15px;
+margin-bottom: 20px;
+font-size: 0.9em;
+}
+
+.empty-state {
+padding: 40px 15px;
+}
+
+.empty-icon {
+font-size: 3.5em;
+}
+
+.empty-text {
+font-size: 1.1em;
+}
+
+.footer {
+padding: 40px 15px;
+margin-top: 60px;
+}
+
+.footer-company {
+font-size: 1.5em;
+}
+
+.footer-tagline {
+font-size: 0.95em;
+}
+}
+
+/* Extra small mobile */
+@media (max-width: 480px) {
+.main-title {
+font-size: 1.8em;
+letter-spacing: 2px;
+}
+
+.nav-tab {
+padding: 8px 15px;
+font-size: 0.85em;
+}
+
+.leaderboard-title {
+font-size: 1.5em;
+}
+
+table {
+font-size: 0.85em;
+}
+
+th, td {
+padding: 10px 6px;
+}
+
+th {
+font-size: 0.9em;
+}
+
+td {
+font-size: 0.85em;
+}
+}
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="title">🏆 Akashic Leaderboards</div>
-            <div class="subtitle">Hall of Champions</div>
-        </div>
-
-        <div class="game-selector">
-            <button class="game-btn active" data-game="reflex">🎯 Reflex Game</button>
-            <button class="game-btn" data-game="sequence">🧠 Sequence Game</button>
-            <button class="game-btn" data-game="memory">🃏 Memory Match</button>
-            <button class="game-btn" data-game="reaction">⚡ Reaction Timer</button>
-            <button class="game-btn" data-game="number">🔢 Number Memory</button>
-            <button class="game-btn" data-game="all">⭐ All Games</button>
-        </div>
-
-        <div class="leaderboard-container">
-            <!-- Reflex Leaderboard -->
-            <div id="reflexLeaderboard" class="leaderboard-section">
-                <div class="leaderboard-header">
-                    <h2 class="leaderboard-title">🎯 Reflex Champions</h2>
-                    <div class="sort-selector">
-                        <button class="sort-btn active" data-sort="score">High Score</button>
-                        <button class="sort-btn" data-sort="accuracy">Best Accuracy</button>
-                        <button class="sort-btn" data-sort="games">Most Games</button>
-                    </div>
-                </div>
-
-                <div class="stats-summary" id="reflexSummary"></div>
-
-                <table class="leaderboard-table">
-                    <thead>
-                        <tr>
-                            <th>Rank</th>
-                            <th>Player</th>
-                            <th>High Score</th>
-                            <th>Best Accuracy</th>
-                            <th>Games Played</th>
-                        </tr>
-                    </thead>
-                    <tbody id="reflexTableBody"></tbody>
-                </table>
-            </div>
-
-            <!-- Sequence Leaderboard -->
-            <div id="sequenceLeaderboard" class="leaderboard-section hidden">
-                <div class="leaderboard-header">
-                    <h2 class="leaderboard-title">🧠 Memory Masters</h2>
-                    <div class="sort-selector">
-                        <button class="sort-btn active" data-sort="score">High Score</button>
-                        <button class="sort-btn" data-sort="level">Highest Level</button>
-                        <button class="sort-btn" data-sort="games">Most Games</button>
-                    </div>
-                </div>
-
-                <div class="stats-summary" id="sequenceSummary"></div>
-
-                <table class="leaderboard-table">
-                    <thead>
-                        <tr>
-                            <th>Rank</th>
-                            <th>Player</th>
-                            <th>High Score</th>
-                            <th>Highest Level</th>
-                            <th>Avg Score</th>
-                        </tr>
-                    </thead>
-                    <tbody id="sequenceTableBody"></tbody>
-                </table>
-            </div>
-
-            <!-- Memory Match Leaderboard -->
-            <div id="memoryLeaderboard" class="leaderboard-section hidden">
-                <div class="leaderboard-header">
-                    <h2 class="leaderboard-title">🃏 Card Match Legends</h2>
-                    <div class="sort-selector">
-                        <button class="sort-btn active" data-sort="moves">Fewest Moves</button>
-                        <button class="sort-btn" data-sort="time">Fastest Time</button>
-                        <button class="sort-btn" data-sort="games">Most Games</button>
-                    </div>
-                </div>
-
-                <div class="stats-summary" id="memorySummary"></div>
-
-                <table class="leaderboard-table">
-                    <thead>
-                        <tr>
-                            <th>Rank</th>
-                            <th>Player</th>
-                            <th>Best Moves</th>
-                            <th>Best Time</th>
-                            <th>Win Rate</th>
-                        </tr>
-                    </thead>
-                    <tbody id="memoryTableBody"></tbody>
-                </table>
-            </div>
-
-            <!-- Reaction Timer Leaderboard -->
-            <div id="reactionLeaderboard" class="leaderboard-section hidden">
-                <div class="leaderboard-header">
-                    <h2 class="leaderboard-title">⚡ Lightning Reflexes</h2>
-                    <div class="sort-selector">
-                        <button class="sort-btn active" data-sort="fastest">Fastest Time</button>
-                        <button class="sort-btn" data-sort="average">Best Average</button>
-                        <button class="sort-btn" data-sort="attempts">Most Attempts</button>
-                    </div>
-                </div>
-
-                <div class="stats-summary" id="reactionSummary"></div>
-
-                <table class="leaderboard-table">
-                    <thead>
-                        <tr>
-                            <th>Rank</th>
-                            <th>Player</th>
-                            <th>Fastest Time</th>
-                            <th>Average Time</th>
-                            <th>Rating</th>
-                        </tr>
-                    </thead>
-                    <tbody id="reactionTableBody"></tbody>
-                </table>
-            </div>
-
-            <!-- Number Memory Leaderboard -->
-            <div id="numberLeaderboard" class="leaderboard-section hidden">
-                <div class="leaderboard-header">
-                    <h2 class="leaderboard-title">🔢 Memory Masters</h2>
-                    <div class="sort-selector">
-                        <button class="sort-btn active" data-sort="longest">Longest Sequence</button>
-                        <button class="sort-btn" data-sort="accuracy">Best Accuracy</button>
-                        <button class="sort-btn" data-sort="attempts">Most Attempts</button>
-                    </div>
-                </div>
-
-                <div class="stats-summary" id="numberSummary"></div>
-
-                <table class="leaderboard-table">
-                    <thead>
-                        <tr>
-                            <th>Rank</th>
-                            <th>Player</th>
-                            <th>Longest Sequence</th>
-                            <th>Accuracy</th>
-                            <th>Rating</th>
-                        </tr>
-                    </thead>
-                    <tbody id="numberTableBody"></tbody>
-                </table>
-            </div>
-
-            <!-- All Games Summary -->
-            <div id="allGamesLeaderboard" class="leaderboard-section hidden">
-                <div class="leaderboard-header">
-                    <h2 class="leaderboard-title">⭐ Ultimate Champions</h2>
-                </div>
-
-                <div class="stats-summary" id="allGamesSummary"></div>
-
-                <table class="leaderboard-table">
-                    <thead>
-                        <tr>
-                            <th>Rank</th>
-                            <th>Player</th>
-                            <th>Total Games</th>
-                            <th>Reflex Score</th>
-                            <th>Sequence Level</th>
-                            <th>Match Wins</th>
-                            <th>Reaction Time</th>
-                            <th>Number Digits</th>
-                        </tr>
-                    </thead>
-                    <tbody id="allGamesTableBody"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="back-link">
-            <a href="#" onclick="goBack()">← Back to Games</a>
-        </div>
-    </div>
-
-    <script>
-        // Storage keys for different games
-        const REFLEX_USERS = 'akashic_users';
-        const SEQUENCE_USERS = 'seq_users';
-        const MEMORY_USERS = 'match_users';
-        const REACTION_USERS = 'reaction_users';
-        const NUMBER_USERS = 'number_users';
-
-        function getGameUsers(storageKey) {
-            return JSON.parse(localStorage.getItem(storageKey) || '[]');
-        }
-
-        function formatTime(seconds) {
-            if (!seconds) return '--';
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return `${mins}:${secs.toString().padStart(2, '0')}`;
-        }
-
-        function getRankIcon(rank) {
-            if (rank === 1) return '🥇';
-            if (rank === 2) return '🥈';
-            if (rank === 3) return '🥉';
-            return rank;
-        }
-
-        function getRankClass(rank) {
-            if (rank === 1) return 'rank-1';
-            if (rank === 2) return 'rank-2';
-            if (rank === 3) return 'rank-3';
-            return '';
-        }
-
-        function getReactionRating(avgTime) {
-            if (!avgTime) return '--';
-            if (avgTime < 200) return '⚡ Lightning';
-            if (avgTime < 250) return '🔥 Blazing';
-            if (avgTime < 300) return '⭐ Excellent';
-            if (avgTime < 350) return '👍 Good';
-            if (avgTime < 400) return '👌 Fair';
-            return '🐌 Slow';
-        }
-
-        function getNumberRating(longest) {
-            if (longest === 0) return '--';
-            if (longest >= 12) return '🧠 Genius';
-            if (longest >= 10) return '⭐ Master';
-            if (longest >= 8) return '🔥 Expert';
-            if (longest >= 7) return '💪 Strong';
-            if (longest >= 5) return '👍 Good';
-            return '📚 Learning';
-        }
-
-        // ==================== REFLEX LEADERBOARD ====================
-        function loadReflexLeaderboard(sortBy = 'score') {
-            const users = getGameUsers(REFLEX_USERS);
-            const tbody = document.getElementById('reflexTableBody');
-
-            if (users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="no-data">No players yet. Be the first!</td></tr>';
-                return;
-            }
-
-            // Sort users
-            let sorted = [...users];
-            if (sortBy === 'score') {
-                sorted.sort((a, b) => (b.stats.highScore || 0) - (a.stats.highScore || 0));
-            } else if (sortBy === 'accuracy') {
-                sorted.sort((a, b) => (b.stats.bestAccuracy || 0) - (a.stats.bestAccuracy || 0));
-            } else if (sortBy === 'games') {
-                sorted.sort((a, b) => (b.stats.gamesPlayed || 0) - (a.stats.gamesPlayed || 0));
-            }
-
-            // Generate rows
-            tbody.innerHTML = sorted.map((user, index) => `
-                <tr>
-                    <td class="rank ${getRankClass(index + 1)}">
-                        <span class="trophy">${getRankIcon(index + 1)}</span>
-                    </td>
-                    <td class="username">${user.username}</td>
-                    <td>
-                        <span class="stat-value">${user.stats.highScore || 0}</span>
-                        <span class="stat-label">points</span>
-                    </td>
-                    <td>
-                        <span class="stat-value">${user.stats.bestAccuracy || 0}%</span>
-                        <span class="stat-label">accuracy</span>
-                    </td>
-                    <td>
-                        <span class="stat-value">${user.stats.gamesPlayed || 0}</span>
-                        <span class="stat-label">games</span>
-                    </td>
-                </tr>
-            `).join('');
-
-            // Summary stats
-            const totalGames = users.reduce((sum, u) => sum + (u.stats.gamesPlayed || 0), 0);
-            const highestScore = Math.max(...users.map(u => u.stats.highScore || 0));
-            const avgAccuracy = users.length > 0 
-                ? Math.round(users.reduce((sum, u) => sum + (u.stats.bestAccuracy || 0), 0) / users.length)
-                : 0;
-
-            document.getElementById('reflexSummary').innerHTML = `
-                <div class="summary-box">
-                    <div class="summary-value">${users.length}</div>
-                    <div class="summary-label">Total Players</div>
-                </div>
-                <div class="summary-box">
-                    <div class="summary-value">${totalGames}</div>
-                    <div class="summary-label">Games Played</div>
-                </div>
-                <div class="summary-box">
-                    <div class="summary-value">${highestScore}</div>
-                    <div class="summary-label">Highest Score</div>
-                </div>
-                <div class="summary-box">
-                    <div class="summary-value">${avgAccuracy}%</div>
-                    <div class="summary-label">Avg Accuracy</div>
-                </div>
-            `;
-        }
-
-        // ==================== SEQUENCE LEADERBOARD ====================
-        function loadSequenceLeaderboard(sortBy = 'score') {
-            const users = getGameUsers(SEQUENCE_USERS);
-            const tbody = document.getElementById('sequenceTableBody');
-
-            if (users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="no-data">No players yet. Be the first!</td></tr>';
-                return;
-            }
-
-            let sorted = [...users];
-            if (sortBy === 'score') {
-                sorted.sort((a, b) => (b.stats.highScore || 0) - (a.stats.highScore || 0));
-            } else if (sortBy === 'level') {
-                sorted.sort((a, b) => (b.stats.highestLevel || 0) - (a.stats.highestLevel || 0));
-            } else if (sortBy === 'games') {
-                sorted.sort((a, b) => (b.stats.gamesPlayed || 0) - (a.stats.gamesPlayed || 0));
-            }
-
-            tbody.innerHTML = sorted.map((user, index) => {
-                const avgScore = user.stats.gamesPlayed > 0 
-                    ? Math.round(user.stats.totalScore / user.stats.gamesPlayed)
-                    : 0;
-                
-                return `
-                    <tr>
-                        <td class="rank ${getRankClass(index + 1)}">
-                            <span class="trophy">${getRankIcon(index + 1)}</span>
-                        </td>
-                        <td class="username">${user.username}</td>
-                        <td>
-                            <span class="stat-value">${user.stats.highScore || 0}</span>
-                            <span class="stat-label">points</span>
-                        </td>
-                        <td>
-                            <span class="stat-value">${user.stats.highestLevel || 0}</span>
-                            <span class="stat-label">level</span>
-                        </td>
-                        <td>
-                            <span class="stat-value">${avgScore}</span>
-                            <span class="stat-label">avg</span>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-
-            const totalGames = users.reduce((sum, u) => sum + (u.stats.gamesPlayed || 0), 0);
-            const highestLevel = Math.max(...users.map(u => u.stats.highestLevel || 0));
-            const highestScore = Math.max(...users.map(u => u.stats.highScore || 0));
-
-            document.getElementById('sequenceSummary').innerHTML = `
-                <div class="summary-box">
-                    <div class="summary-value">${users.length}</div>
-                    <div class="summary-label">Total Players</div>
-                </div>
-                <div class="summary-box">
-                    <div class="summary-value">${totalGames}</div>
-                    <div class="summary-label">Games Played</div>
-                </div>
-                <div class="summary-box">
-                    <div class="summary-value">${highestLevel}</div>
-                    <div class="summary-label">Highest Level</div>
-                </div>
-                <div class="summary-box">
-                    <div class="summary-value">${highestScore}</div>
-                    <div class="summary-label">Best Score</div>
-                </div>
-            `;
-        }
-
-        // ==================== MEMORY MATCH LEADERBOARD ====================
-        function loadMemoryLeaderboard(sortBy = 'moves') {
-            const users = getGameUsers(MEMORY_USERS);
-            const tbody = document.getElementById('memoryTableBody');
-
-            if (users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="no-data">No players yet. Be the first!</td></tr>';
-                return;
-            }
-
-            let sorted = [...users].filter(u => u.stats.bestMoves !== null);
-            
-            if (sortBy === 'moves') {
-                sorted.sort((a, b) => (a.stats.bestMoves || Infinity) - (b.stats.bestMoves || Infinity));
-            } else if (sortBy === 'time') {
-                sorted.sort((a, b) => (a.stats.bestTime || Infinity) - (b.stats.bestTime || Infinity));
-            } else if (sortBy === 'games') {
-                sorted.sort((a, b) => (b.stats.gamesPlayed || 0) - (a.stats.gamesPlayed || 0));
-            }
-
-            tbody.innerHTML = sorted.map((user, index) => {
-                const winRate = user.stats.gamesPlayed > 0 
-                    ? Math.round((user.stats.gamesWon / user.stats.gamesPlayed) * 100)
-                    : 0;
-                
-                return `
-                    <tr>
-                        <td class="rank ${getRankClass(index + 1)}">
-                            <span class="trophy">${getRankIcon(index + 1)}</span>
-                        </td>
-                        <td class="username">${user.username}</td>
-                        <td>
-                            <span class="stat-value">${user.stats.bestMoves || '--'}</span>
-                            <span class="stat-label">moves</span>
-                        </td>
-                        <td>
-                            <span class="stat-value">${formatTime(user.stats.bestTime)}</span>
-                            <span class="stat-label">time</span>
-                        </td>
-                        <td>
-                            <span class="stat-value">${winRate}%</span>
-                            <span class="stat-label">win rate</span>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-
-            const totalGames = users.reduce((sum, u) => sum + (u.stats.gamesPlayed || 0), 0);
-            const bestMoves = Math.min(...users.filter(u => u.stats.bestMoves).map(u => u.stats.bestMoves));
-            const bestTime = Math.min(...users.filter(u => u.stats.bestTime).map(u => u.stats.bestTime));
-
-            document.getElementById('memorySummary').innerHTML = `
-                <div class="summary-box">
-                    <div class="summary-value">${users.length}</div>
-                    <div class="summary-label">Total Players</div>
-                </div>
-                <div class="summary-box">
-                    <div class="summary-value">${totalGames}</div>
-                    <div class="summary-label">Games Played</div>
-                </div>
-                <div class="summary-box">
-                    <div class="summary-value">${bestMoves !== Infinity ? bestMoves : '--'}</div>
-                    <div class="summary-label">Best Moves</div>
-                </div>
-                <div class="summary-box">
-                    <div class="summary-value">${bestTime !== Infinity ? formatTime(bestTime) : '--'}</div>
-                    <div class="summary-label">Best Time</div>
-                </div>
-            `;
-        }
-
-        // ==================== REACTION TIMER LEADERBOARD ====================
-        function loadReactionLeaderboard(sortBy = 'fastest') {
-            const users = getGameUsers(REACTION_USERS);
-            const tbody = document.getElementById('reactionTableBody');
-
-            if (users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="no-data">No players yet. Be the first!</td></tr>';
-                return;
-            }
-
-            let sorted = [...users].filter(u => u.stats.fastestTime !== null);
-            
-            if (sortBy === 'fastest') {
-                sorted.sort((a, b) => (a.stats.fastestTime || Infinity) - (b.stats.fastestTime || Infinity));
-            } else if (sortBy === 'average') {
-                sorted.sort((a, b) => {
-                    const avgA = a.stats.allTimes.length > 0 
-                        ? a.stats.allTimes.reduce((sum, t) => sum + t, 0) / a.stats.allTimes.length 
-                        : Infinity;
-                    const avgB = b.stats.allTimes.length > 0 
-                        ? b.stats.allTimes.reduce((sum, t) => sum + t, 0) / b.stats.allTimes.length 
-                        : Infinity;
-                    return avgA - avgB;
-                });
-            } else if (sortBy === 'attempts') {
-                sorted.sort((a, b) => (b.stats.totalAttempts || 0) - (a.stats.totalAttempts || 0));
-            }
-
-            tbody.innerHTML = sorted.map((user, index) => {
-                const avgTime = user.stats.allTimes.length > 0
-                    ? Math.round(user.stats.allTimes.reduce((sum, t) => sum + t, 0) / user.stats.allTimes.length)
-                    : null;
-                
-                return `
-                    <tr>
-                        <td class="rank ${getRankClass(index + 1)}">
-                            <span class="trophy">${getRankIcon(index + 1)}</span>
-                        </td>
-                        <td class="username">${user.username}</td>
-                        <td>
-                            <span class="stat-value">${user.stats.fastestTime}ms</span>
-                            <span class="stat-label">fastest</span>
-                        </td>
-                        <td>
-                            <span class="stat-value">${avgTime ? avgTime + 'ms' : '--'}</span>
-                            <span class="stat-label">average</span>
-                        </td>
-                        <td>
-                            <span class="stat-value">${getReactionRating(avgTime)}</span>
-                            <span class="stat-label">rating</span>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-
-            const totalAttempts = users.reduce((sum, u) => sum + (u.stats.totalAttempts || 0), 0);
-            const fastestOverall = Math.min(...users.filter(u => u.stats.fastestTime).map(u => u.stats.fastestTime));
-            
-            const allAvgTimes = users
-                .filter(u => u.stats.allTimes.length > 0)
-                .map(u => u.stats.allTimes.reduce((sum, t) => sum + t, 0) / u.stats.allTimes.length);
-            const avgOfAvgs = allAvgTimes.length > 0 
-                ? Math.round(allAvgTimes.reduce((sum, t) => sum + t, 0) / allAvgTimes.length)
-                : null;
-
-            document.getElementById('reactionSummary').innerHTML = `
-                <div class="summary-box">
-                    <div class="summary-value">${users.length}</div>
-                    <div class="summary-label">Total Players</div>
-                </div>
-                <div class="summary-box">
-                    <div class="summary-value">${totalAttempts}</div>
-                    <div class="summary-label">Total Attempts</div>
-                </div>
-                <div class="summary-box">
-                    <div class="summary-value">${fastestOverall !== Infinity ? fastestOverall + 'ms' : '--'}</div>
-                    <div class="summary-label">Fastest Ever</div>
-                </div>
-                <div class="summary-box">
-                    <div class="summary-value">${avgOfAvgs ? avgOfAvgs + 'ms' : '--'}</div>
-                    <div class="summary-label">Global Average</div>
-                </div>
-            `;
-        }
-
-        // ==================== NUMBER MEMORY LEADERBOARD ====================
-        function loadNumberLeaderboard(sortBy = 'longest') {
-            const users = getGameUsers(NUMBER_USERS);
-            const tbody = document.getElementById('numberTableBody');
-
-            if (users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="no-data">No players yet. Be the first!</td></tr>';
-                return;
-            }
-
-            let sorted = [...users];
-            
-            if (sortBy === 'longest') {
-                sorted.sort((a, b) => (b.stats.longestSequence || 0) - (a.stats.longestSequence || 0));
-            } else if (sortBy === 'accuracy') {
-                sorted.sort((a, b) => {
-                    const accA = a.stats.totalAttempts > 0 
-                        ? (a.stats.correctAnswers / a.stats.totalAttempts) * 100
-                        : 0;
-                    const accB = b.stats.totalAttempts > 0 
-                        ? (b.stats.correctAnswers / b.stats.totalAttempts) * 100
-                        : 0;
-                    return accB - accA;
-                });
-            } else if (sortBy === 'attempts') {
-                sorted.sort((a, b) => (b.stats.totalAttempts || 0) - (a.stats.totalAttempts || 0));
-            }
-
-            tbody.innerHTML = sorted.map((user, index) => {
-                const accuracy = user.stats.totalAttempts > 0
-                    ? Math.round((user.stats.correctAnswers / user.stats.totalAttempts) * 100)
-                    : 0;
-                
-                return `
-                    <tr>
-                        <td class="rank ${getRankClass(index + 1)}">
-                            <span class="trophy">${getRankIcon(index + 1)}</span>
-                        </td>
-                        <td class="username">${user.username}</td>
-                        <td>
-                            <span class="stat-value">${user.stats.longestSequence || 0}</span>
-                            <span class="stat-label">digits</span>
-                        </td>
-                        <td>
-                            <span class="stat-value">${accuracy}%</span>
-                            <span class="stat-label">accuracy</span>
-                        </td>
-                        <td>
-                            <span class="stat-value">${getNumberRating(user.stats.longestSequence)}</span>
-                            <span class="stat-label">rating</span>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-
-            const totalAttempts = users.reduce((sum, u) => sum + (u.stats.totalAttempts || 0), 0);
-            const longestOverall = Math.max(...users.map(u => u.stats.longestSequence || 0));
-            const totalCorrect = users.reduce((sum, u) => sum + (u.stats.correctAnswers || 0), 0);
-            const globalAccuracy = totalAttempts > 0 
-                ? Math.round((totalCorrect / totalAttempts) * 100)
-                : 0;
-
-            document.getElementById('numberSummary').innerHTML = `
-                <div class="summary-box">
-                    <div class="summary-value">${users.length}</div>
-                    <div class="summary-label">Total Players</div>
-                </div>
-                <div class="summary-box">
-                    <div class="summary-value">${totalAttempts}</div>
-                    <div class="summary-label">Total Attempts</div>
-                </div>
-                <div class="summary-box">
-                    <div class="summary-value">${longestOverall}</div>
-                    <div class="summary-label">Longest Sequence</div>
-                </div>
-                <div class="summary-box">
-                    <div class="summary-value">${globalAccuracy}%</div>
-                    <div class="summary-label">Global Accuracy</div>
-                </div>
-            `;
-        }
-
-        // ==================== ALL GAMES SUMMARY ====================
-        function loadAllGamesLeaderboard() {
-            const reflexUsers = getGameUsers(REFLEX_USERS);
-            const sequenceUsers = getGameUsers(SEQUENCE_USERS);
-            const memoryUsers = getGameUsers(MEMORY_USERS);
-            const reactionUsers = getGameUsers(REACTION_USERS);
-            const numberUsers = getGameUsers(NUMBER_USERS);
-
-            // Merge all users by username
-            const allPlayers = new Map();
-
-            reflexUsers.forEach(u => {
-                allPlayers.set(u.username.toLowerCase(), {
-                    username: u.username,
-                    reflexGames: u.stats.gamesPlayed || 0,
-                    reflexScore: u.stats.highScore || 0,
-                    sequenceGames: 0,
-                    sequenceLevel: 0,
-                    memoryGames: 0,
-                    memoryWins: 0,
-                    reactionAttempts: 0,
-                    reactionFastest: null,
-                    numberAttempts: 0,
-                    numberLongest: 0
-                });
-            });
-
-            sequenceUsers.forEach(u => {
-                const key = u.username.toLowerCase();
-                if (allPlayers.has(key)) {
-                    allPlayers.get(key).sequenceGames = u.stats.gamesPlayed || 0;
-                    allPlayers.get(key).sequenceLevel = u.stats.highestLevel || 0;
-                } else {
-                    allPlayers.set(key, {
-                        username: u.username,
-                        reflexGames: 0,
-                        reflexScore: 0,
-                        sequenceGames: u.stats.gamesPlayed || 0,
-                        sequenceLevel: u.stats.highestLevel || 0,
-                        memoryGames: 0,
-                        memoryWins: 0,
-                        reactionAttempts: 0,
-                        reactionFastest: null,
-                        numberAttempts: 0,
-                        numberLongest: 0
-                    });
-                }
-            });
-
-            memoryUsers.forEach(u => {
-                const key = u.username.toLowerCase();
-                if (allPlayers.has(key)) {
-                    allPlayers.get(key).memoryGames = u.stats.gamesPlayed || 0;
-                    allPlayers.get(key).memoryWins = u.stats.gamesWon || 0;
-                } else {
-                    allPlayers.set(key, {
-                        username: u.username,
-                        reflexGames: 0,
-                        reflexScore: 0,
-                        sequenceGames: 0,
-                        sequenceLevel: 0,
-                        memoryGames: u.stats.gamesPlayed || 0,
-                        memoryWins: u.stats.gamesWon || 0,
-                        reactionAttempts: 0,
-                        reactionFastest: null,
-                        numberAttempts: 0,
-                        numberLongest: 0
-                    });
-                }
-            });
-
-            reactionUsers.forEach(u => {
-                const key = u.username.toLowerCase();
-                if (allPlayers.has(key)) {
-                    allPlayers.get(key).reactionAttempts = u.stats.totalAttempts || 0;
-                    allPlayers.get(key).reactionFastest = u.stats.fastestTime;
-                } else {
-                    allPlayers.set(key, {
-                        username: u.username,
-                        reflexGames: 0,
-                        reflexScore: 0,
-                        sequenceGames: 0,
-                        sequenceLevel: 0,
-                        memoryGames: 0,
-                        memoryWins: 0,
-                        reactionAttempts: u.stats.totalAttempts || 0,
-                        reactionFastest: u.stats.fastestTime,
-                        numberAttempts: 0,
-                        numberLongest: 0
-                    });
-                }
-            });
-
-            numberUsers.forEach(u => {
-                const key = u.username.toLowerCase();
-                if (allPlayers.has(key)) {
-                    allPlayers.get(key).numberAttempts = u.stats.totalAttempts || 0;
-                    allPlayers.get(key).numberLongest = u.stats.longestSequence || 0;
-                } else {
-                    allPlayers.set(key, {
-                        username: u.username,
-                        reflexGames: 0,
-                        reflexScore: 0,
-                        sequenceGames: 0,
-                        sequenceLevel: 0,
-                        memoryGames: 0,
-                        memoryWins: 0,
-                        reactionAttempts: 0,
-                        reactionFastest: null,
-                        numberAttempts: u.stats.totalAttempts || 0,
-                        numberLongest: u.stats.longestSequence || 0
-                    });
-                }
-            });
-
-            const players = Array.from(allPlayers.values());
-            
-            // Sort by total games played
-            players.sort((a, b) => {
-                const totalA = a.reflexGames + a.sequenceGames + a.memoryGames + a.reactionAttempts + a.numberAttempts;
-                const totalB = b.reflexGames + b.sequenceGames + b.memoryGames + b.reactionAttempts + b.numberAttempts;
-                return totalB - totalA;
-            });
-
-            const tbody = document.getElementById('allGamesTableBody');
-
-            if (players.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="no-data">No players yet. Be the first!</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = players.map((player, index) => {
-                const totalGames = player.reflexGames + player.sequenceGames + player.memoryGames + player.reactionAttempts + player.numberAttempts;
-                
-                return `
-                    <tr>
-                        <td class="rank ${getRankClass(index + 1)}">
-                            <span class="trophy">${getRankIcon(index + 1)}</span>
-                        </td>
-                        <td class="username">${player.username}</td>
-                        <td>
-                            <span class="stat-value">${totalGames}</span>
-                            <span class="stat-label">total</span>
-                        </td>
-                        <td>
-                            <span class="stat-value">${player.reflexScore}</span>
-                            <span class="stat-label">reflex</span>
-                        </td>
-                        <td>
-                            <span class="stat-value">${player.sequenceLevel}</span>
-                            <span class="stat-label">sequence</span>
-                        </td>
-                        <td>
-                            <span class="stat-value">${player.memoryWins}</span>
-                            <span class="stat-label">matches</span>
-                        </td>
-                        <td>
-                            <span class="stat-value">${player.reactionFastest ? player.reactionFastest + 'ms' : '--'}</span>
-                            <span class="stat-label">reaction</span>
-                        </td>
-                        <td>
-                            <span class="stat-value">${player.numberLongest}</span>
-                            <span class="stat-label">digits</span>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-
-            const totalAllGames = players.reduce((sum, p) => 
-                sum + p.reflexGames + p.sequenceGames + p.memoryGames + p.reactionAttempts + p.numberAttempts, 0
-            );
-
-            document.getElementById('allGamesSummary').innerHTML = `
-                <div class="summary-box">
-                    <div class="summary-value">${players.length}</div>
-                    <div class="summary-label">Total Players</div>
-                </div>
-                <div class="summary-box">
-                    <div class="summary-value">${totalAllGames}</div>
-                    <div class="summary-label">All Games Played</div>
-                </div>
-                <div class="summary-box">
-                    <div class="summary-value">${reflexUsers.length}</div>
-                    <div class="summary-label">Reflex Players</div>
-                </div>
-                <div class="summary-box">
-                    <div class="summary-value">${sequenceUsers.length}</div>
-                    <div class="summary-label">Sequence Players</div>
-                </div>
-                <div class="summary-box">
-                    <div class="summary-value">${memoryUsers.length}</div>
-                    <div class="summary-label">Memory Players</div>
-                </div>
-                <div class="summary-box">
-                    <div class="summary-value">${reactionUsers.length}</div>
-                    <div class="summary-label">Reaction Players</div>
-                </div>
-                <div class="summary-box">
-                    <div class="summary-value">${numberUsers.length}</div>
-                    <div class="summary-label">Number Players</div>
-                </div>
-            `;
-        }
-
-        // ==================== EVENT LISTENERS ====================
-        document.addEventListener('DOMContentLoaded', function() {
-            // Game selector
-            document.querySelectorAll('.game-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.game-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-
-                    document.querySelectorAll('.leaderboard-section').forEach(section => {
-                        section.classList.add('hidden');
-                    });
-
-                    const game = btn.dataset.game;
-                    if (game === 'reflex') {
-                        document.getElementById('reflexLeaderboard').classList.remove('hidden');
-                        loadReflexLeaderboard();
-                    } else if (game === 'sequence') {
-                        document.getElementById('sequenceLeaderboard').classList.remove('hidden');
-                        loadSequenceLeaderboard();
-                    } else if (game === 'memory') {
-                        document.getElementById('memoryLeaderboard').classList.remove('hidden');
-                        loadMemoryLeaderboard();
-                    } else if (game === 'reaction') {
-                        document.getElementById('reactionLeaderboard').classList.remove('hidden');
-                        loadReactionLeaderboard();
-                    } else if (game === 'number') {
-                        document.getElementById('numberLeaderboard').classList.remove('hidden');
-                        loadNumberLeaderboard();
-                    } else if (game === 'all') {
-                        document.getElementById('allGamesLeaderboard').classList.remove('hidden');
-                        loadAllGamesLeaderboard();
-                    }
-                });
-            });
-
-            // Sort buttons for each game
-            document.querySelectorAll('#reflexLeaderboard .sort-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('#reflexLeaderboard .sort-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    loadReflexLeaderboard(btn.dataset.sort);
-                });
-            });
-
-            document.querySelectorAll('#sequenceLeaderboard .sort-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('#sequenceLeaderboard .sort-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    loadSequenceLeaderboard(btn.dataset.sort);
-                });
-            });
-
-            document.querySelectorAll('#memoryLeaderboard .sort-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('#memoryLeaderboard .sort-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    loadMemoryLeaderboard(btn.dataset.sort);
-                });
-            });
-
-            document.querySelectorAll('#reactionLeaderboard .sort-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('#reactionLeaderboard .sort-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    loadReactionLeaderboard(btn.dataset.sort);
-                });
-            });
-
-            document.querySelectorAll('#numberLeaderboard .sort-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('#numberLeaderboard .sort-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    loadNumberLeaderboard(btn.dataset.sort);
-                });
-            });
-
-            // Load initial leaderboard
-            loadReflexLeaderboard();
-        });
-
-        function goBack() {
-            // You can customize this to go back to your main games page
-            window.history.back();
-        }
-    </script>
+<!-- Animated stars background -->
+<div class="stars" id="stars"></div>
+
+<div class="content">
+<!-- Header -->
+<div class="header">
+<a href="/" class="back-link">← Back to Home</a>
+<div class="trophy-icon">🏆</div>
+<h1 class="main-title">HALL OF CHAMPIONS</h1>
+<p class="subtitle">Compete. Improve. Excel.</p>
+<div class="company-badge">Akashic Works</div>
+</div>
+
+<!-- Navigation Tabs -->
+<div class="nav-tabs">
+<button class="nav-tab active" onclick="showLeaderboard('combined')">🌟 Combined</button>
+<button class="nav-tab" onclick="showLeaderboard('reflex')">🎯 Reflex</button>
+<button class="nav-tab" onclick="showLeaderboard('sequence')">🧠 Sequence</button>
+<button class="nav-tab" onclick="showLeaderboard('match')">🃏 Match</button>
+<button class="nav-tab" onclick="showLeaderboard('reaction')">⚡ Reaction</button>
+<button class="nav-tab" onclick="showLeaderboard('number')">🔢 Number</button>
+</div>
+
+<!-- Combined Leaderboard -->
+<div id="combined" class="leaderboard-container active">
+<div class="leaderboard-header">
+<div class="leaderboard-icon">🌟</div>
+<h2 class="leaderboard-title">Combined Rankings</h2>
+<p class="leaderboard-description">
+The ultimate champions! Ranked by total points across all five programs.
+</p>
+</div>
+
+<div class="combined-note">
+<strong>How it works:</strong> Your total score is the sum of your best performances
+across all five cognitive training programs.
+</div>
+
+<div class="leaderboard-table">
+<table>
+<thead>
+<tr>
+<th class="rank">Rank</th>
+<th>Champion</th>
+<th class="score">Total Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="rank"><span class="medal">🥇</span>1</td>
+<td>CognitiveKing</td>
+<td class="score">4,850</td>
+</tr>
+<tr>
+<td class="rank"><span class="medal">🥈</span>2</td>
+<td>MindMaster2024</td>
+<td class="score">4,720</td>
+</tr>
+<tr>
+<td class="rank"><span class="medal">🥉</span>3</td>
+<td>BrainStorm</td>
+<td class="score">4,685</td>
+</tr>
+<tr>
+<td class="rank">4</td>
+<td>ThinkFast</td>
+<td class="score">4,520</td>
+</tr>
+<tr>
+<td class="rank">5</td>
+<td>NeuralNet</td>
+<td class="score">4,395</td>
+</tr>
+<tr>
+<td class="rank">6</td>
+<td>MentalAthlete</td>
+<td class="score">4,280</td>
+</tr>
+<tr>
+<td class="rank">7</td>
+<td>QuickMind</td>
+<td class="score">4,175</td>
+</tr>
+<tr>
+<td class="rank">8</td>
+<td>CognitivePro</td>
+<td class="score">4,050</td>
+</tr>
+<tr>
+<td class="rank">9</td>
+<td>FocusedGamer</td>
+<td class="score">3,920</td>
+</tr>
+<tr>
+<td class="rank">10</td>
+<td>SharpMind</td>
+<td class="score">3,815</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<!-- Reflex Training Leaderboard -->
+<div id="reflex" class="leaderboard-container">
+<div class="leaderboard-header">
+<div class="leaderboard-icon">🎯</div>
+<h2 class="leaderboard-title">Reflex Training</h2>
+<p class="leaderboard-description">
+Lightning-fast reactions and perfect accuracy. Who has the best hand-eye coordination?
+</p>
+</div>
+
+<div class="leaderboard-table">
+<table>
+<thead>
+<tr>
+<th class="rank">Rank</th>
+<th>Player</th>
+<th class="score">Best Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="rank"><span class="medal">🥇</span>1</td>
+<td>QuickDraw</td>
+<td class="score">1,285</td>
+</tr>
+<tr>
+<td class="rank"><span class="medal">🥈</span>2</td>
+<td>ReflexKing</td>
+<td class="score">1,240</td>
+</tr>
+<tr>
+<td class="rank"><span class="medal">🥉</span>3</td>
+<td>SpeedDemon</td>
+<td class="score">1,195</td>
+</tr>
+<tr>
+<td class="rank">4</td>
+<td>FastFingers</td>
+<td class="score">1,150</td>
+</tr>
+<tr>
+<td class="rank">5</td>
+<td>ClickMaster</td>
+<td class="score">1,105</td>
+</tr>
+<tr>
+<td class="rank">6</td>
+<td>ReactPro</td>
+<td class="score">1,060</td>
+</tr>
+<tr>
+<td class="rank">7</td>
+<td>SwiftHands</td>
+<td class="score">1,025</td>
+</tr>
+<tr>
+<td class="rank">8</td>
+<td>AccuracyAce</td>
+<td class="score">990</td>
+</tr>
+<tr>
+<td class="rank">9</td>
+<td>ColorSniper</td>
+<td class="score">955</td>
+</tr>
+<tr>
+<td class="rank">10</td>
+<td>TargetHunter</td>
+<td class="score">920</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<!-- Sequence Memory Leaderboard -->
+<div id="sequence" class="leaderboard-container">
+<div class="leaderboard-header">
+<div class="leaderboard-icon">🧠</div>
+<h2 class="leaderboard-title">Sequence Memory</h2>
+<p class="leaderboard-description">
+Pattern masters! Who can remember the longest sequences?
+</p>
+</div>
+
+<div class="leaderboard-table">
+<table>
+<thead>
+<tr>
+<th class="rank">Rank</th>
+<th>Player</th>
+<th class="score">Level Reached</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="rank"><span class="medal">🥇</span>1</td>
+<td>PatternGenius</td>
+<td class="score">Level 28</td>
+</tr>
+<tr>
+<td class="rank"><span class="medal">🥈</span>2</td>
+<td>MemoryMaster</td>
+<td class="score">Level 26</td>
+</tr>
+<tr>
+<td class="rank"><span class="medal">🥉</span>3</td>
+<td>SequencePro</td>
+<td class="score">Level 24</td>
+</tr>
+<tr>
+<td class="rank">4</td>
+<td>RecallExpert</td>
+<td class="score">Level 22</td>
+</tr>
+<tr>
+<td class="rank">5</td>
+<td>ColorRecall</td>
+<td class="score">Level 21</td>
+</tr>
+<tr>
+<td class="rank">6</td>
+<td>PatternKing</td>
+<td class="score">Level 20</td>
+</tr>
+<tr>
+<td class="rank">7</td>
+<td>MindVault</td>
+<td class="score">Level 19</td>
+</tr>
+<tr>
+<td class="rank">8</td>
+<td>SequenceAce</td>
+<td class="score">Level 18</td>
+</tr>
+<tr>
+<td class="rank">9</td>
+<td>BrainBuffer</td>
+<td class="score">Level 17</td>
+</tr>
+<tr>
+<td class="rank">10</td>
+<td>MemoryChamp</td>
+<td class="score">Level 16</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<!-- Memory Match Leaderboard -->
+<div id="match" class="leaderboard-container">
+<div class="leaderboard-header">
+<div class="leaderboard-icon">🃏</div>
+<h2 class="leaderboard-title">Memory Match</h2>
+<p class="leaderboard-description">
+Perfect pairs in record time! The fastest matchmakers.
+</p>
+</div>
+
+<div class="leaderboard-table">
+<table>
+<thead>
+<tr>
+<th class="rank">Rank</th>
+<th>Player</th>
+<th class="score">Best Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="rank"><span class="medal">🥇</span>1</td>
+<td>CardShark</td>
+<td class="score">18.5s</td>
+</tr>
+<tr>
+<td class="rank"><span class="medal">🥈</span>2</td>
+<td>PerfectPairs</td>
+<td class="score">19.2s</td>
+</tr>
+<tr>
+<td class="rank"><span class="medal">🥉</span>3</td>
+<td>MatchMaster</td>
+<td class="score">20.1s</td>
+</tr>
+<tr>
+<td class="rank">4</td>
+<td>SpeedMatcher</td>
+<td class="score">21.3s</td>
+</tr>
+<tr>
+<td class="rank">5</td>
+<td>CardNinja</td>
+<td class="score">22.0s</td>
+</tr>
+<tr>
+<td class="rank">6</td>
+<td>PairFinder</td>
+<td class="score">22.8s</td>
+</tr>
+<tr>
+<td class="rank">7</td>
+<td>QuickMatch</td>
+<td class="score">23.5s</td>
+</tr>
+<tr>
+<td class="rank">8</td>
+<td>MemoryCard</td>
+<td class="score">24.2s</td>
+</tr>
+<tr>
+<td class="rank">9</td>
+<td>SymbolSeeker</td>
+<td class="score">25.0s</td>
+</tr>
+<tr>
+<td class="rank">10</td>
+<td>CardWhiz</td>
+<td class="score">25.7s</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<!-- Reaction Time Leaderboard -->
+<div id="reaction" class="leaderboard-container">
+<div class="leaderboard-header">
+<div class="leaderboard-icon">⚡</div>
+<h2 class="leaderboard-title">Reaction Time</h2>
+<p class="leaderboard-description">
+Lightning reflexes! The fastest reaction times ever recorded.
+</p>
+</div>
+
+<div class="leaderboard-table">
+<table>
+<thead>
+<tr>
+<th class="rank">Rank</th>
+<th>Player</th>
+<th class="score">Avg Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="rank"><span class="medal">🥇</span>1</td>
+<td>LightningBolt</td>
+<td class="score">142ms</td>
+</tr>
+<tr>
+<td class="rank"><span class="medal">🥈</span>2</td>
+<td>InstantClick</td>
+<td class="score">148ms</td>
+</tr>
+<tr>
+<td class="rank"><span class="medal">🥉</span>3</td>
+<td>ThunderHands</td>
+<td class="score">153ms</td>
+</tr>
+<tr>
+<td class="rank">4</td>
+<td>QuickReact</td>
+<td class="score">159ms</td>
+</tr>
+<tr>
+<td class="rank">5</td>
+<td>SpeedClick</td>
+<td class="score">165ms</td>
+</tr>
+<tr>
+<td class="rank">6</td>
+<td>FastResponse</td>
+<td class="score">171ms</td>
+</tr>
+<tr>
+<td class="rank">7</td>
+<td>ReflexPro</td>
+<td class="score">177ms</td>
+</tr>
+<tr>
+<td class="rank">8</td>
+<td>SwiftReact</td>
+<td class="score">183ms</td>
+</tr>
+<tr>
+<td class="rank">9</td>
+<td>GreenGhost</td>
+<td class="score">189ms</td>
+</tr>
+<tr>
+<td class="rank">10</td>
+<td>QuickDraw92</td>
+<td class="score">195ms</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<!-- Number Memory Leaderboard -->
+<div id="number" class="leaderboard-container">
+<div class="leaderboard-header">
+<div class="leaderboard-icon">🔢</div>
+<h2 class="leaderboard-title">Number Memory</h2>
+<p class="leaderboard-description">
+Digit champions! Who can remember the longest number sequences?
+</p>
+</div>
+
+<div class="leaderboard-table">
+<table>
+<thead>
+<tr>
+<th class="rank">Rank</th>
+<th>Player</th>
+<th class="score">Digits</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="rank"><span class="medal">🥇</span>1</td>
+<td>NumberWizard</td>
+<td class="score">19 digits</td>
+</tr>
+<tr>
+<td class="rank"><span class="medal">🥈</span>2</td>
+<td>DigitMaster</td>
+<td class="score">17 digits</td>
+</tr>
+<tr>
+<td class="rank"><span class="medal">🥉</span>3</td>
+<td>MathGenius</td>
+<td class="score">16 digits</td>
+</tr>
+<tr>
+<td class="rank">4</td>
+<td>NumberNinja</td>
+<td class="score">15 digits</td>
+</tr>
+<tr>
+<td class="rank">5</td>
+<td>DigitRecall</td>
+<td class="score">14 digits</td>
+</tr>
+<tr>
+<td class="rank">6</td>
+<td>SequenceKing</td>
+<td class="score">14 digits</td>
+</tr>
+<tr>
+<td class="rank">7</td>
+<td>NumberChamp</td>
+<td class="score">13 digits</td>
+</tr>
+<tr>
+<td class="rank">8</td>
+<td>DigitHero</td>
+<td class="score">13 digits</td>
+</tr>
+<tr>
+<td class="rank">9</td>
+<td>MathMind</td>
+<td class="score">12 digits</td>
+</tr>
+<tr>
+<td class="rank">10</td>
+<td>NumberPro</td>
+<td class="score">12 digits</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+<div class="footer-company">AKASHIC WORKS LLC</div>
+<div class="footer-tagline">Where Great Minds Are Built</div>
+</div>
+</div>
+
+<script>
+// Generate random stars
+function createStars() {
+const starsContainer = document.getElementById('stars');
+const starCount = 150;
+
+for (let i = 0; i < starCount; i++) {
+const star = document.createElement('div');
+star.className = 'star';
+star.style.left = Math.random() * 100 + '%';
+star.style.top = Math.random() * 100 + '%';
+star.style.animationDelay = Math.random() * 3 + 's';
+starsContainer.appendChild(star);
+}
+}
+
+createStars();
+
+// Leaderboard navigation
+function showLeaderboard(board) {
+// Hide all leaderboards
+document.querySelectorAll('.leaderboard-container').forEach(container => {
+container.classList.remove('active');
+});
+
+// Remove active class from all tabs
+document.querySelectorAll('.nav-tab').forEach(tab => {
+tab.classList.remove('active');
+});
+
+// Show selected leaderboard
+document.getElementById(board).classList.add('active');
+
+// Add active class to clicked tab
+event.target.classList.add('active');
+}
+</script>
 </body>
 </html>
